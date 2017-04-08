@@ -10,7 +10,7 @@ Just start the class DemoServer
 
 ### Executable JAR file
 1. Open a terminal window
-3. Change directory to <project-location>
+3. Change directory to your project location
 3. Run `gradlew publishToMavenLocal`
 4. Change directory to build/libs
 4. Run `java -jar demo-server-0.1.0-BUILD-SNAPSHOT.jar`
