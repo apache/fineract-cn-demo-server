@@ -1,0 +1,111 @@
+buildscript {
+
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath ("io.spring.gradle:dependency-management-plugin:0.6.0.RELEASE")
+    }
+
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.4.1.RELEASE")
+    }
+}
+
+plugins {
+    id 'com.github.hierynomus.license' version '0.13.1'
+}
+
+group 'io.mifos.dev'
+version '0.1.0-BUILD-SNAPSHOT'
+
+ext.versions = [
+        frameworkservicestarter : '0.1.0-BUILD-SNAPSHOT',
+        mifosidentity           : '0.1.0-BUILD-SNAPSHOT',
+        mifosprovisioner        : '0.1.0-BUILD-SNAPSHOT',
+        mifosoffice             : '0.1.0-BUILD-SNAPSHOT',
+        mifoscustomer           : '0.1.0-BUILD-SNAPSHOT',
+        mifosaccounting         : '0.1.0-BUILD-SNAPSHOT',
+        mifosportfolio          : '0.1.0-BUILD-SNAPSHOT',
+        frameworkapi            : '0.1.0-BUILD-SNAPSHOT',
+        frameworklang           : '0.1.0-BUILD-SNAPSHOT',
+        frameworktest           : '0.1.0-BUILD-SNAPSHOT',
+        frameworkanubis         : '0.1.0-BUILD-SNAPSHOT',
+        validator               : '5.3.0.Final'
+]
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'io.spring.dependency-management'
+apply plugin: 'spring-boot'
+apply plugin: 'maven-publish'
+
+tasks.withType(JavaCompile) {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+repositories {
+    jcenter()
+    mavenLocal()
+}
+
+dependencyManagement {
+    imports {
+        mavenBom 'io.spring.platform:platform-bom:Athens-RELEASE'
+        mavenBom 'org.springframework.cloud:spring-cloud-dependencies:Camden.SR1'
+    }
+}
+
+// override certain dependency provided by Spring platform using newer releases
+ext['cassandra.version'] = '3.6'
+ext['cassandra-driver.version'] = '3.1.2'
+ext['activemq.version'] = '5.13.2'
+ext['spring-data-releasetrain.version'] = 'Gosling-SR2A'
+
+dependencies {
+    compile(
+            [group: 'com.google.code.findbugs', name: 'jsr305'],
+            [group: 'org.springframework.cloud', name: 'spring-cloud-starter-eureka-server'],
+            [group: 'io.mifos.office', name: 'api', version: versions.mifosoffice],
+            [group: 'io.mifos.provisioner', name: 'api', version: versions.mifosprovisioner],
+            [group: 'io.mifos.identity', name: 'api', version: versions.mifosidentity],
+
+            [group: 'io.mifos.customer', name: 'api', version: versions.mifoscustomer],
+            [group: 'io.mifos.accounting', name: 'api', version: versions.mifosaccounting],
+            [group: 'io.mifos.portfolio', name: 'api', version: versions.mifosportfolio],
+
+            [group: 'io.mifos.anubis', name: 'api', version: versions.frameworkanubis],
+            [group: 'io.mifos.anubis', name: 'test', version: versions.frameworkanubis],
+            [group: 'io.mifos.core', name: 'api', version: versions.frameworkapi],
+            [group: 'io.mifos.core', name: 'test', version: versions.frameworktest],
+            [group: 'io.mifos.core', name: 'lang', version: versions.frameworklang],
+            [group: 'io.mifos', name: 'service-starter', version: versions.frameworkservicestarter],
+            [group: 'org.springframework.boot', name: 'spring-boot-starter-test'],
+            [group: 'org.eclipse.aether', name: 'aether-api', version: '1.1.0'],
+            [group: 'org.eclipse.aether', name: 'aether-spi', version: '1.1.0'],
+            [group: 'org.eclipse.aether', name: 'aether-util', version: '1.1.0'],
+            [group: 'org.eclipse.aether', name: 'aether-impl', version: '1.1.0'],
+            [group: 'org.eclipse.aether', name: 'aether-connector-basic', version: '1.1.0'],
+            [group: 'org.eclipse.aether', name: 'aether-transport-file', version: '1.1.0'],
+            [group: 'org.eclipse.aether', name: 'aether-transport-http', version: '1.1.0'],
+            [group: 'org.apache.maven', name: 'maven-aether-provider', version: '3.1.0'],
+            [group: 'org.springframework.boot', name: 'spring-boot-starter-test']
+    )
+}
+
+publishToMavenLocal.dependsOn bootRepackage
+
+license {
+    header rootProject.file('HEADER')
+    strictCheck true
+    mapping {
+        java = 'SLASHSTAR_STYLE'
+        xml = 'XML_STYLE'
+        yml = 'SCRIPT_STYLE'
+        yaml = 'SCRIPT_STYLE'
+    }
+    ext.year = Calendar.getInstance().get(Calendar.YEAR)
+    ext.name = 'The Mifos Initiative'
+}
