@@ -18,9 +18,11 @@ package io.mifos.dev;
 import ch.vorburger.mariadb4j.DB;
 import ch.vorburger.mariadb4j.DBConfigurationBuilder;
 import io.mifos.accounting.api.v1.client.LedgerManager;
+import io.mifos.anubis.api.v1.domain.AllowedOperation;
 import io.mifos.anubis.api.v1.domain.Signature;
 import io.mifos.core.api.config.EnableApiFactory;
 import io.mifos.core.api.context.AutoSeshat;
+import io.mifos.core.api.context.AutoUserContext;
 import io.mifos.core.api.util.ApiConstants;
 import io.mifos.core.api.util.ApiFactory;
 import io.mifos.core.lang.TenantContextHolder;
@@ -32,7 +34,14 @@ import io.mifos.core.test.servicestarter.EurekaForTest;
 import io.mifos.core.test.servicestarter.IntegrationTestEnvironment;
 import io.mifos.core.test.servicestarter.Microservice;
 import io.mifos.customer.api.v1.client.CustomerManager;
+import io.mifos.identity.api.v1.EventConstants;
+import io.mifos.identity.api.v1.PermittableGroupIds;
 import io.mifos.identity.api.v1.client.IdentityManager;
+import io.mifos.identity.api.v1.domain.Authentication;
+import io.mifos.identity.api.v1.domain.Password;
+import io.mifos.identity.api.v1.domain.Permission;
+import io.mifos.identity.api.v1.domain.Role;
+import io.mifos.identity.api.v1.domain.UserWithPassword;
 import io.mifos.office.api.v1.client.OrganizationManager;
 import io.mifos.portfolio.api.v1.client.PortfolioManager;
 import io.mifos.provisioner.api.v1.client.Provisioner;
@@ -58,8 +67,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.util.Base64Utils;
 
 import java.security.PublicKey;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
@@ -179,8 +190,8 @@ public class ServiceRunner {
   }
 
   @Test
-  public void startDevServer() throws InterruptedException {
-    this.provisionAppsViaSeshat();
+  public void startDevServer() throws Exception {
+    this.createAdmin(this.provisionAppsViaSeshat());
 
     System.out.println("Identity Service: " + ServiceRunner.identityService.getProcessEnvironment().serverURI());
     System.out.println("Office Service: " + ServiceRunner.officeClient.getProcessEnvironment().serverURI());
@@ -208,9 +219,11 @@ public class ServiceRunner {
         .build();
   }
 
-  private void provisionAppsViaSeshat() throws InterruptedException {
+  private String provisionAppsViaSeshat() throws InterruptedException {
     final AuthenticationResponse authenticationResponse =
         ServiceRunner.provisionerService.api().authenticate(ServiceRunner.CLIENT_ID, ApiConstants.SYSTEM_SU, "oS/0IiAME/2unkN1momDrhAdNKOhGykYFH/mJN20");
+
+    String tenantAdminPassword;
 
     try (final AutoSeshat ignored = new AutoSeshat(authenticationResponse.getToken())) {
       final Tenant tenant = this.makeTenant();
@@ -227,13 +240,16 @@ public class ServiceRunner {
       final AssignedApplication assignedApplication = new AssignedApplication();
       assignedApplication.setName(ServiceRunner.identityService.name());
 
-      ServiceRunner.provisionerService.api().assignIdentityManager(tenant.getIdentifier(), assignedApplication);
+      final IdentityManagerInitialization identityManagerInitialization = ServiceRunner.provisionerService.api().assignIdentityManager(tenant.getIdentifier(), assignedApplication);
+      tenantAdminPassword = identityManagerInitialization.getAdminPassword();
 
       this.createApplication(tenant, ServiceRunner.officeClient, io.mifos.office.api.v1.EventConstants.INITIALIZE);
       this.createApplication(tenant, ServiceRunner.customerClient, io.mifos.customer.api.v1.CustomerEventConstants.INITIALIZE);
       this.createApplication(tenant, ServiceRunner.accountingClient, io.mifos.accounting.api.v1.EventConstants.INITIALIZE);
       this.createApplication(tenant, ServiceRunner.portfolioClient, io.mifos.portfolio.api.v1.events.EventConstants.INITIALIZE);
     }
+
+    return tenantAdminPassword;
   }
 
   private void createApplication(final Tenant tenant, final Microservice<?> microservice, final String eventType)
@@ -275,5 +291,69 @@ public class ServiceRunner {
     databaseConnectionInfo.setPassword("mysql");
     tenant.setDatabaseConnectionInfo(databaseConnectionInfo);
     return tenant;
+  }
+
+  private void createAdmin(final String tenantAdminPassword) throws Exception {
+    final String tenantAdminUser = "antony";
+    final Authentication adminPasswordOnlyAuthentication = ServiceRunner.identityService.api().login(tenantAdminUser, tenantAdminPassword);
+    try (final AutoUserContext ignored = new AutoUserContext(tenantAdminUser, adminPasswordOnlyAuthentication.getAccessToken()))
+    {
+      ServiceRunner.identityService.api().changeUserPassword(tenantAdminUser, new Password(tenantAdminPassword));
+      Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_PUT_USER_PASSWORD, tenantAdminUser));
+    }
+    final Authentication adminAuthentication = ServiceRunner.identityService.api().login(tenantAdminUser, tenantAdminPassword);
+
+    try (final AutoUserContext ignored = new AutoUserContext(tenantAdminUser, adminAuthentication.getAccessToken())) {
+      final Role fimsAdministratorRole = makeFimsAdministratorRole();
+
+      ServiceRunner.identityService.api().createRole(fimsAdministratorRole);
+      Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_ROLE, fimsAdministratorRole.getIdentifier()));
+
+      final UserWithPassword fimsAdministratorUser = new UserWithPassword();
+      fimsAdministratorUser.setIdentifier("fims");
+      fimsAdministratorUser.setPassword(Base64Utils.encodeToString("p@s$w0r&".getBytes()));
+      fimsAdministratorUser.setRole(fimsAdministratorRole.getIdentifier());
+
+      ServiceRunner.identityService.api().createUser(fimsAdministratorUser);
+      Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_USER, fimsAdministratorUser.getIdentifier()));
+
+      ServiceRunner.identityService.api().logout();
+    }
+  }
+
+  private Role makeFimsAdministratorRole() {
+    final Permission employeeAllPermission = new Permission();
+    employeeAllPermission.setAllowedOperations(AllowedOperation.ALL);
+    employeeAllPermission.setPermittableEndpointGroupIdentifier(io.mifos.office.api.v1.PermittableGroupIds.EMPLOYEE_MANAGEMENT);
+
+    final Permission officeAllPermission = new Permission();
+    officeAllPermission.setAllowedOperations(AllowedOperation.ALL);
+    officeAllPermission.setPermittableEndpointGroupIdentifier(io.mifos.office.api.v1.PermittableGroupIds.OFFICE_MANAGEMENT);
+
+    final Permission userAllPermission = new Permission();
+    userAllPermission.setAllowedOperations(AllowedOperation.ALL);
+    userAllPermission.setPermittableEndpointGroupIdentifier(io.mifos.identity.api.v1.PermittableGroupIds.IDENTITY_MANAGEMENT);
+
+    final Permission roleAllPermission = new Permission();
+    roleAllPermission.setAllowedOperations(AllowedOperation.ALL);
+    roleAllPermission.setPermittableEndpointGroupIdentifier(io.mifos.identity.api.v1.PermittableGroupIds.ROLE_MANAGEMENT);
+
+    final Permission selfManagementPermission = new Permission();
+    selfManagementPermission.setAllowedOperations(AllowedOperation.ALL);
+    selfManagementPermission.setPermittableEndpointGroupIdentifier(io.mifos.identity.api.v1.PermittableGroupIds.SELF_MANAGEMENT);
+
+    final Role role = new Role();
+    role.setIdentifier("fims_administrator");
+    role.setPermissions(
+        Arrays.asList(
+            employeeAllPermission,
+            officeAllPermission,
+            userAllPermission,
+            roleAllPermission,
+            selfManagementPermission
+        )
+    );
+
+    return role;
   }
 }
