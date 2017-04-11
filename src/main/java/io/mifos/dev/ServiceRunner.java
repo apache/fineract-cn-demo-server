@@ -35,7 +35,6 @@ import io.mifos.core.test.servicestarter.IntegrationTestEnvironment;
 import io.mifos.core.test.servicestarter.Microservice;
 import io.mifos.customer.api.v1.client.CustomerManager;
 import io.mifos.identity.api.v1.EventConstants;
-import io.mifos.identity.api.v1.PermittableGroupIds;
 import io.mifos.identity.api.v1.client.IdentityManager;
 import io.mifos.identity.api.v1.domain.Authentication;
 import io.mifos.identity.api.v1.domain.Password;
@@ -144,35 +143,11 @@ public class ServiceRunner {
     ServiceRunner.provisionerService.start();
     ServiceRunner.provisionerService.setApiFactory(apiFactory);
 
-    ServiceRunner.identityService =
-        new Microservice<>(IdentityManager.class, "identity", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-    ServiceRunner.identityService.getProcessEnvironment().setProperty("server.max-http-header-size", Integer.toString(16 * 1024));
-    ServiceRunner.identityService.start();
-    ServiceRunner.identityService.setApiFactory(apiFactory);
-
-    ServiceRunner.officeClient =
-        new Microservice<>(OrganizationManager.class, "office", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-    ServiceRunner.officeClient.getProcessEnvironment().setProperty("server.max-http-header-size", Integer.toString(16 * 1024));
-    ServiceRunner.officeClient.start();
-    ServiceRunner.officeClient.setApiFactory(apiFactory);
-
-    ServiceRunner.customerClient =
-        new Microservice<>(CustomerManager.class, "customer", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-    ServiceRunner.customerClient.getProcessEnvironment().setProperty("server.max-http-header-size", Integer.toString(16 * 1024));
-    ServiceRunner.customerClient.start();
-    ServiceRunner.customerClient.setApiFactory(apiFactory);
-
-    ServiceRunner.accountingClient =
-        new Microservice<>(LedgerManager.class, "accounting", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-    ServiceRunner.accountingClient.getProcessEnvironment().setProperty("server.max-http-header-size", Integer.toString(16 * 1024));
-    ServiceRunner.accountingClient.start();
-    ServiceRunner.accountingClient.setApiFactory(apiFactory);
-
-    ServiceRunner.portfolioClient =
-        new Microservice<>(PortfolioManager.class, "portfolio", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-    ServiceRunner.portfolioClient.getProcessEnvironment().setProperty("server.max-http-header-size", Integer.toString(16 * 1024));
-    ServiceRunner.portfolioClient.start();
-    ServiceRunner.portfolioClient.setApiFactory(apiFactory);
+    ServiceRunner.identityService = this.startService(IdentityManager.class, "identity");
+    ServiceRunner.officeClient = this.startService(OrganizationManager.class, "office");
+    ServiceRunner.customerClient = this.startService(CustomerManager.class, "customer");
+    ServiceRunner.accountingClient = this.startService(LedgerManager.class, "accounting");
+    ServiceRunner.portfolioClient = this.startService(PortfolioManager.class, "portfolio");
   }
 
   @After
@@ -217,6 +192,14 @@ public class ServiceRunner {
         .setPublicKeyMod(sig.getPublicKeyMod())
         .setPublicKeyExp(sig.getPublicKeyExp())
         .build();
+  }
+
+  private <T> Microservice<T> startService(final Class<T> serviceClass, final String serviceName) throws Exception {
+    final Microservice<T> microservice = new Microservice<>(serviceClass, serviceName, "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+    microservice.getProcessEnvironment().setProperty("server.max-http-header-size", Integer.toString(16 * 1024));
+    microservice.start();
+    microservice.setApiFactory(this.apiFactory);
+    return microservice;
   }
 
   private String provisionAppsViaSeshat() throws InterruptedException {
