@@ -146,10 +146,10 @@ public class ServiceRunner {
 
     final Properties generalProperties = new Properties();
     generalProperties.setProperty("server.max-http-header-size", Integer.toString(16 * 1024));
-    generalProperties.setProperty("spring.security.strategy", "MODE_INHERITABLETHREADLOCAL");
 
-    final Properties identityProperties = new Properties(generalProperties);
+    final Properties identityProperties = new Properties();
     identityProperties.setProperty("identity.token.refresh.secureCookie", "false");
+    identityProperties.setProperty("server.max-http-header-size", Integer.toString(16 * 1024));
 
     ServiceRunner.identityService = this.startService(IdentityManager.class, "identity", identityProperties);
     ServiceRunner.officeClient = this.startService(OrganizationManager.class, "office", generalProperties);
