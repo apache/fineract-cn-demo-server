@@ -71,6 +71,7 @@ import org.springframework.util.Base64Utils;
 import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Properties;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
@@ -143,11 +144,18 @@ public class ServiceRunner {
     ServiceRunner.provisionerService.start();
     ServiceRunner.provisionerService.setApiFactory(apiFactory);
 
-    ServiceRunner.identityService = this.startService(IdentityManager.class, "identity");
-    ServiceRunner.officeClient = this.startService(OrganizationManager.class, "office");
-    ServiceRunner.customerClient = this.startService(CustomerManager.class, "customer");
-    ServiceRunner.accountingClient = this.startService(LedgerManager.class, "accounting");
-    ServiceRunner.portfolioClient = this.startService(PortfolioManager.class, "portfolio");
+    final Properties generalProperties = new Properties();
+    generalProperties.setProperty("server.max-http-header-size", Integer.toString(16 * 1024));
+    generalProperties.setProperty("spring.security.strategy", "MODE_INHERITABLETHREADLOCAL");
+
+    final Properties identityProperties = new Properties(generalProperties);
+    identityProperties.setProperty("identity.token.refresh.secureCookie", "false");
+
+    ServiceRunner.identityService = this.startService(IdentityManager.class, "identity", identityProperties);
+    ServiceRunner.officeClient = this.startService(OrganizationManager.class, "office", generalProperties);
+    ServiceRunner.customerClient = this.startService(CustomerManager.class, "customer", generalProperties);
+    ServiceRunner.accountingClient = this.startService(LedgerManager.class, "accounting", generalProperties);
+    ServiceRunner.portfolioClient = this.startService(PortfolioManager.class, "portfolio", generalProperties);
   }
 
   @After
@@ -167,7 +175,6 @@ public class ServiceRunner {
   @Test
   public void startDevServer() throws Exception {
     this.createAdmin(this.provisionAppsViaSeshat());
-
     System.out.println("Identity Service: " + ServiceRunner.identityService.getProcessEnvironment().serverURI());
     System.out.println("Office Service: " + ServiceRunner.officeClient.getProcessEnvironment().serverURI());
     System.out.println("Customer Service: " + ServiceRunner.customerClient.getProcessEnvironment().serverURI());
@@ -194,9 +201,13 @@ public class ServiceRunner {
         .build();
   }
 
-  private <T> Microservice<T> startService(final Class<T> serviceClass, final String serviceName) throws Exception {
+  private <T> Microservice<T> startService(final Class<T> serviceClass, final String serviceName, final Properties properties) throws Exception {
     final Microservice<T> microservice = new Microservice<>(serviceClass, serviceName, "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-    microservice.getProcessEnvironment().setProperty("server.max-http-header-size", Integer.toString(16 * 1024));
+    if (properties !=null) {
+      properties.forEach((key, value) -> {
+        microservice.getProcessEnvironment().setProperty(key.toString(), value.toString());
+      });
+    }
     microservice.start();
     microservice.setApiFactory(this.apiFactory);
     return microservice;
