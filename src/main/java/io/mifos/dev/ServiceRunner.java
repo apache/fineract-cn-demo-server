@@ -19,14 +19,12 @@ import ch.vorburger.mariadb4j.DB;
 import ch.vorburger.mariadb4j.DBConfigurationBuilder;
 import io.mifos.accounting.api.v1.client.LedgerManager;
 import io.mifos.anubis.api.v1.domain.AllowedOperation;
-import io.mifos.anubis.api.v1.domain.Signature;
 import io.mifos.core.api.config.EnableApiFactory;
 import io.mifos.core.api.context.AutoSeshat;
 import io.mifos.core.api.context.AutoUserContext;
 import io.mifos.core.api.util.ApiConstants;
 import io.mifos.core.api.util.ApiFactory;
 import io.mifos.core.lang.TenantContextHolder;
-import io.mifos.core.lang.security.RsaPublicKeyBuilder;
 import io.mifos.core.test.env.TestEnvironment;
 import io.mifos.core.test.listener.EventRecorder;
 import io.mifos.core.test.servicestarter.ActiveMQForTest;
@@ -36,27 +34,13 @@ import io.mifos.core.test.servicestarter.Microservice;
 import io.mifos.customer.api.v1.client.CustomerManager;
 import io.mifos.identity.api.v1.EventConstants;
 import io.mifos.identity.api.v1.client.IdentityManager;
-import io.mifos.identity.api.v1.domain.Authentication;
-import io.mifos.identity.api.v1.domain.Password;
-import io.mifos.identity.api.v1.domain.Permission;
-import io.mifos.identity.api.v1.domain.Role;
-import io.mifos.identity.api.v1.domain.UserWithPassword;
+import io.mifos.identity.api.v1.domain.*;
 import io.mifos.office.api.v1.client.OrganizationManager;
 import io.mifos.portfolio.api.v1.client.PortfolioManager;
 import io.mifos.provisioner.api.v1.client.Provisioner;
-import io.mifos.provisioner.api.v1.domain.Application;
-import io.mifos.provisioner.api.v1.domain.AssignedApplication;
-import io.mifos.provisioner.api.v1.domain.AuthenticationResponse;
-import io.mifos.provisioner.api.v1.domain.CassandraConnectionInfo;
-import io.mifos.provisioner.api.v1.domain.DatabaseConnectionInfo;
-import io.mifos.provisioner.api.v1.domain.IdentityManagerInitialization;
-import io.mifos.provisioner.api.v1.domain.Tenant;
+import io.mifos.provisioner.api.v1.domain.*;
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,7 +52,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.Base64Utils;
 
-import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Properties;
@@ -192,21 +175,11 @@ public class ServiceRunner {
     }
   }
 
-  public PublicKey getPublicKey() {
-    final Signature sig = ServiceRunner.identityService.api().getSignature();
-
-    return new RsaPublicKeyBuilder()
-        .setPublicKeyMod(sig.getPublicKeyMod())
-        .setPublicKeyExp(sig.getPublicKeyExp())
-        .build();
-  }
-
   private <T> Microservice<T> startService(final Class<T> serviceClass, final String serviceName, final Properties properties) throws Exception {
     final Microservice<T> microservice = new Microservice<>(serviceClass, serviceName, "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
     if (properties !=null) {
-      properties.forEach((key, value) -> {
-        microservice.getProcessEnvironment().setProperty(key.toString(), value.toString());
-      });
+      properties.forEach((key, value) ->
+              microservice.getProcessEnvironment().setProperty(key.toString(), value.toString()));
     }
     microservice.start();
     microservice.setApiFactory(this.apiFactory);
