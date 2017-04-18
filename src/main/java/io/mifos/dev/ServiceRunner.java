@@ -32,7 +32,7 @@ import io.mifos.core.test.servicestarter.EurekaForTest;
 import io.mifos.core.test.servicestarter.IntegrationTestEnvironment;
 import io.mifos.core.test.servicestarter.Microservice;
 import io.mifos.customer.api.v1.client.CustomerManager;
-import io.mifos.identity.api.v1.EventConstants;
+import io.mifos.identity.api.v1.events.EventConstants;
 import io.mifos.identity.api.v1.client.IdentityManager;
 import io.mifos.identity.api.v1.domain.*;
 import io.mifos.office.api.v1.client.OrganizationManager;
