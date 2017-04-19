@@ -135,7 +135,8 @@ public class ServiceRunner {
     generalProperties.setProperty("bonecp.minConnectionsPerPartition", "1");
     generalProperties.setProperty("bonecp.acquireIncrement", "1");
 
-    final Properties identityProperties = new Properties(generalProperties);
+    final Properties identityProperties = new Properties();
+    identityProperties.putAll(generalProperties);
     identityProperties.setProperty("identity.token.refresh.secureCookie", "false");
 
     ServiceRunner.identityService = this.startService(IdentityManager.class, "identity", identityProperties);
