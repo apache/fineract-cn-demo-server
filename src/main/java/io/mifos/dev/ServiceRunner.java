@@ -24,7 +24,7 @@ import io.mifos.core.api.context.AutoSeshat;
 import io.mifos.core.api.context.AutoUserContext;
 import io.mifos.core.api.util.ApiConstants;
 import io.mifos.core.api.util.ApiFactory;
-import io.mifos.core.lang.TenantContextHolder;
+import io.mifos.core.lang.AutoTenantContext;
 import io.mifos.core.test.env.TestEnvironment;
 import io.mifos.core.test.listener.EventRecorder;
 import io.mifos.core.test.servicestarter.ActiveMQForTest;
@@ -54,6 +54,7 @@ import org.springframework.util.Base64Utils;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
@@ -129,10 +130,13 @@ public class ServiceRunner {
 
     final Properties generalProperties = new Properties();
     generalProperties.setProperty("server.max-http-header-size", Integer.toString(16 * 1024));
+    generalProperties.setProperty("bonecp.partitionCount", "1");
+    generalProperties.setProperty("bonecp.maxConnectionsPerPartition", "4");
+    generalProperties.setProperty("bonecp.minConnectionsPerPartition", "1");
+    generalProperties.setProperty("bonecp.acquireIncrement", "1");
 
-    final Properties identityProperties = new Properties();
+    final Properties identityProperties = new Properties(generalProperties);
     identityProperties.setProperty("identity.token.refresh.secureCookie", "false");
-    identityProperties.setProperty("server.max-http-header-size", Integer.toString(16 * 1024));
 
     ServiceRunner.identityService = this.startService(IdentityManager.class, "identity", identityProperties);
     ServiceRunner.officeClient = this.startService(OrganizationManager.class, "office", generalProperties);
@@ -152,12 +156,13 @@ public class ServiceRunner {
 
     ServiceRunner.embeddedMariaDb.stop();
 
-    EmbeddedCassandraServerHelper.cleanEmbeddedCassandra();
+//    EmbeddedCassandraServerHelper.cleanEmbeddedCassandra();
   }
 
   @Test
   public void startDevServer() throws Exception {
-    this.createAdmin(this.provisionAppsViaSeshat());
+    this.provisionAppsViaSeshat();
+
     System.out.println("Identity Service: " + ServiceRunner.identityService.getProcessEnvironment().serverURI());
     System.out.println("Office Service: " + ServiceRunner.officeClient.getProcessEnvironment().serverURI());
     System.out.println("Customer Service: " + ServiceRunner.customerClient.getProcessEnvironment().serverURI());
@@ -186,78 +191,60 @@ public class ServiceRunner {
     return microservice;
   }
 
-  private String provisionAppsViaSeshat() throws InterruptedException {
+  private void provisionAppsViaSeshat() throws Exception {
     final AuthenticationResponse authenticationResponse =
         ServiceRunner.provisionerService.api().authenticate(ServiceRunner.CLIENT_ID, ApiConstants.SYSTEM_SU, "oS/0IiAME/2unkN1momDrhAdNKOhGykYFH/mJN20");
 
-    String tenantAdminPassword;
+    final List<Application> applicationsToCreate = Arrays.asList(
+        ApplicationBuilder.create(ServiceRunner.identityService.name(), ServiceRunner.identityService.uri()),
+        ApplicationBuilder.create(ServiceRunner.officeClient.name(), ServiceRunner.officeClient.uri()),
+        ApplicationBuilder.create(ServiceRunner.customerClient.name(), ServiceRunner.customerClient.uri()),
+        ApplicationBuilder.create(ServiceRunner.accountingClient.name(), ServiceRunner.accountingClient.uri()),
+        ApplicationBuilder.create(ServiceRunner.portfolioClient.name(), ServiceRunner.portfolioClient.uri())
+    );
+
+    final List<Tenant> tenantsToCreate = Arrays.asList(
+        TenantBuilder.create("demo-cccu", "demo for CCCU", "demo_cccu"),
+        TenantBuilder.create("SKCUKNS1", "St Kitts Cooperative Credit Union", "SKCUKNS1"),
+        TenantBuilder.create("PCCUKNS1", "Police Cooperative Credit Union", "PCCUKNS1"),
+        TenantBuilder.create("FCCUKNS1", "FND Cooperative Credit Union", "FCCUKNS1"),
+        TenantBuilder.create("NCCUKNN1", "Nevis Cooperative Credit Union", "NCCUKNN1")
+    );
 
     try (final AutoSeshat ignored = new AutoSeshat(authenticationResponse.getToken())) {
-      final Tenant tenant = this.makeTenant();
-
-      ServiceRunner.provisionerService.api().createTenant(tenant);
-
-      final Application identityApplication = new Application();
-      identityApplication.setName(ServiceRunner.identityService.name());
-      identityApplication.setHomepage(ServiceRunner.identityService.uri());
-      identityApplication.setDescription("Identity Service");
-      identityApplication.setVendor("Apache Fineract");
-      ServiceRunner.provisionerService.api().createApplication(identityApplication);
-
-      final AssignedApplication assignedApplication = new AssignedApplication();
-      assignedApplication.setName(ServiceRunner.identityService.name());
-
-      final IdentityManagerInitialization identityManagerInitialization = ServiceRunner.provisionerService.api().assignIdentityManager(tenant.getIdentifier(), assignedApplication);
-      tenantAdminPassword = identityManagerInitialization.getAdminPassword();
-
-      this.createApplication(tenant, ServiceRunner.officeClient, io.mifos.office.api.v1.EventConstants.INITIALIZE);
-      this.createApplication(tenant, ServiceRunner.customerClient, io.mifos.customer.api.v1.CustomerEventConstants.INITIALIZE);
-      this.createApplication(tenant, ServiceRunner.accountingClient, io.mifos.accounting.api.v1.EventConstants.INITIALIZE);
-      this.createApplication(tenant, ServiceRunner.portfolioClient, io.mifos.portfolio.api.v1.events.EventConstants.INITIALIZE);
+      applicationsToCreate.forEach(application -> ServiceRunner.provisionerService.api().createApplication(application));
     }
 
-    return tenantAdminPassword;
-  }
+    final AdminPasswordHolder adminPasswordHolder = new AdminPasswordHolder();
+      tenantsToCreate.forEach(tenant -> {
+        try (final AutoSeshat ignored = new AutoSeshat(authenticationResponse.getToken())) {
+          ServiceRunner.provisionerService.api().createTenant(tenant);
+          applicationsToCreate.forEach(application -> {
+            if (application.getName().equals(ServiceRunner.identityService.name())) {
+              final AssignedApplication assignedApplication = new AssignedApplication();
+              assignedApplication.setName(ServiceRunner.identityService.name());
 
-  private void createApplication(final Tenant tenant, final Microservice<?> microservice, final String eventType)
-      throws InterruptedException {
-    final Application application = new Application();
-    application.setName(microservice.name());
-    application.setHomepage(microservice.uri());
-    application.setVendor("Apache Fineract");
+              final IdentityManagerInitialization identityManagerInitialization = ServiceRunner.provisionerService.api().assignIdentityManager(tenant.getIdentifier(), assignedApplication);
+              adminPasswordHolder.setPassword(identityManagerInitialization.getAdminPassword());
+            } else {
+              final AssignedApplication assignedApplication = new AssignedApplication();
+              assignedApplication.setName(application.getName());
+              ServiceRunner.provisionerService.api().assignApplications(tenant.getIdentifier(), Collections.singletonList(assignedApplication));
+              try {
+                Thread.sleep(5000L);
+              } catch (InterruptedException e) {
+                //do nothing
+              }
+            }
+          });
+        }
 
-    ServiceRunner.provisionerService.api().createApplication(application);
-
-    final AssignedApplication assignedApplication = new AssignedApplication();
-    assignedApplication.setName(microservice.name());
-    ServiceRunner.provisionerService.api().assignApplications(tenant.getIdentifier(), Collections.singletonList(assignedApplication));
-
-    Assert.assertTrue(this.eventRecorder.wait(eventType, eventType));
-  }
-
-  private Tenant makeTenant() {
-    final Tenant tenant = new Tenant();
-    tenant.setName("Apache Fineract Demo Server");
-    tenant.setIdentifier(TenantContextHolder.checkedGetIdentifier());
-    tenant.setDescription("All in one Demo Server");
-
-    final CassandraConnectionInfo cassandraConnectionInfo = new CassandraConnectionInfo();
-    cassandraConnectionInfo.setClusterName("Test Cluster");
-    cassandraConnectionInfo.setContactPoints("127.0.0.1:9142");
-    cassandraConnectionInfo.setKeyspace("fineract_demo");
-    cassandraConnectionInfo.setReplicas("3");
-    cassandraConnectionInfo.setReplicationType("Simple");
-    tenant.setCassandraConnectionInfo(cassandraConnectionInfo);
-
-    final DatabaseConnectionInfo databaseConnectionInfo = new DatabaseConnectionInfo();
-    databaseConnectionInfo.setDriverClass("org.mariadb.jdbc.Driver");
-    databaseConnectionInfo.setDatabaseName("fineract_demo");
-    databaseConnectionInfo.setHost("localhost");
-    databaseConnectionInfo.setPort("3306");
-    databaseConnectionInfo.setUser("root");
-    databaseConnectionInfo.setPassword("mysql");
-    tenant.setDatabaseConnectionInfo(databaseConnectionInfo);
-    return tenant;
+        try (final AutoTenantContext autoTenantContext = new AutoTenantContext(tenant.getIdentifier())) {
+          this.createAdmin(adminPasswordHolder.getPassword());
+        } catch (final Exception ex) {
+          ex.printStackTrace();
+        }
+    });
   }
 
   private void createAdmin(final String tenantAdminPassword) throws Exception {
@@ -271,14 +258,14 @@ public class ServiceRunner {
     final Authentication adminAuthentication = ServiceRunner.identityService.api().login(tenantAdminUser, tenantAdminPassword);
 
     try (final AutoUserContext ignored = new AutoUserContext(tenantAdminUser, adminAuthentication.getAccessToken())) {
-      final Role fimsAdministratorRole = makeFimsAdministratorRole();
+      final Role fimsAdministratorRole = createOrgAdministratorRole();
 
       ServiceRunner.identityService.api().createRole(fimsAdministratorRole);
       Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_ROLE, fimsAdministratorRole.getIdentifier()));
 
       final UserWithPassword fimsAdministratorUser = new UserWithPassword();
-      fimsAdministratorUser.setIdentifier("fims");
-      fimsAdministratorUser.setPassword(Base64Utils.encodeToString("p@s$w0r&".getBytes()));
+      fimsAdministratorUser.setIdentifier("operator");
+      fimsAdministratorUser.setPassword(Base64Utils.encodeToString("init1@l".getBytes()));
       fimsAdministratorUser.setRole(fimsAdministratorRole.getIdentifier());
 
       ServiceRunner.identityService.api().createUser(fimsAdministratorUser);
@@ -288,7 +275,7 @@ public class ServiceRunner {
     }
   }
 
-  private Role makeFimsAdministratorRole() {
+  private Role createOrgAdministratorRole() {
     final Permission employeeAllPermission = new Permission();
     employeeAllPermission.setAllowedOperations(AllowedOperation.ALL);
     employeeAllPermission.setPermittableEndpointGroupIdentifier(io.mifos.office.api.v1.PermittableGroupIds.EMPLOYEE_MANAGEMENT);
@@ -310,7 +297,7 @@ public class ServiceRunner {
     selfManagementPermission.setPermittableEndpointGroupIdentifier(io.mifos.identity.api.v1.PermittableGroupIds.SELF_MANAGEMENT);
 
     final Role role = new Role();
-    role.setIdentifier("fims_administrator");
+    role.setIdentifier("orgadmin");
     role.setPermissions(
         Arrays.asList(
             employeeAllPermission,
