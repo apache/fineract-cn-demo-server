@@ -76,6 +76,8 @@ public class ServiceRunner {
 
   private static DB embeddedMariaDb;
 
+  private static final String CUSTOM_PROP_PREFIX = "custom.";
+
   @Configuration
   @ActiveMQForTest.EnableActiveMQListen
   @EnableApiFactory
@@ -134,20 +136,24 @@ public class ServiceRunner {
     provisionerTestEnvironment.addSystemPrivateKeyToProperties();
     provisionerTestEnvironment.setProperty("system.initialclientid", ServiceRunner.CLIENT_ID);
 
-    if (this.environment.containsProperty(CassandraConnectorConstants.CONTACT_POINTS_PROP)) {
-      provisionerTestEnvironment.setProperty(CassandraConnectorConstants.CONTACT_POINTS_PROP, this.environment.getProperty(CassandraConnectorConstants.CONTACT_POINTS_PROP));
+    if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + CassandraConnectorConstants.CONTACT_POINTS_PROP)) {
+      provisionerTestEnvironment.setProperty(CassandraConnectorConstants.CONTACT_POINTS_PROP, this.environment.getProperty(ServiceRunner.CUSTOM_PROP_PREFIX + CassandraConnectorConstants.CONTACT_POINTS_PROP));
+      System.out.println(provisionerTestEnvironment.getProperty(CassandraConnectorConstants.CONTACT_POINTS_PROP));
     }
 
-    if (this.environment.containsProperty(MariaDBConstants.MARIADB_HOST_PROP)) {
-      provisionerTestEnvironment.setProperty(MariaDBConstants.MARIADB_HOST_PROP, this.environment.getProperty(MariaDBConstants.MARIADB_HOST_PROP));
+    if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_HOST_PROP)) {
+      provisionerTestEnvironment.setProperty(MariaDBConstants.MARIADB_HOST_PROP, this.environment.getProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_HOST_PROP));
+      System.out.println(provisionerTestEnvironment.getProperty(MariaDBConstants.MARIADB_HOST_PROP));
     }
 
-    if (this.environment.containsProperty(MariaDBConstants.MARIADB_USER_PROP)) {
-      provisionerTestEnvironment.setProperty(MariaDBConstants.MARIADB_USER_PROP, this.environment.getProperty(MariaDBConstants.MARIADB_USER_PROP));
+    if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_USER_PROP)) {
+      provisionerTestEnvironment.setProperty(MariaDBConstants.MARIADB_USER_PROP, this.environment.getProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_USER_PROP));
+      System.out.println(provisionerTestEnvironment.getProperty(MariaDBConstants.MARIADB_USER_PROP));
     }
 
-    if (this.environment.containsProperty(MariaDBConstants.MARIADB_PASSWORD_PROP)) {
-      provisionerTestEnvironment.setProperty(MariaDBConstants.MARIADB_PASSWORD_PROP, this.environment.getProperty(MariaDBConstants.MARIADB_PASSWORD_PROP));
+    if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_PASSWORD_PROP)) {
+      provisionerTestEnvironment.setProperty(MariaDBConstants.MARIADB_PASSWORD_PROP, this.environment.getProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_PASSWORD_PROP));
+      System.out.println(provisionerTestEnvironment.getProperty(MariaDBConstants.MARIADB_PASSWORD_PROP));
     }
 
     ServiceRunner.provisionerService.start();
@@ -344,20 +350,20 @@ public class ServiceRunner {
   }
 
   private void setAdditionalProperties(final Properties properties) {
-    if (this.environment.containsProperty(CassandraConnectorConstants.CONTACT_POINTS_PROP)) {
-      properties.setProperty(CassandraConnectorConstants.CONTACT_POINTS_PROP, this.environment.getProperty(CassandraConnectorConstants.CONTACT_POINTS_PROP));
+    if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + CassandraConnectorConstants.CONTACT_POINTS_PROP)) {
+      properties.setProperty(CassandraConnectorConstants.CONTACT_POINTS_PROP, this.environment.getProperty(ServiceRunner.CUSTOM_PROP_PREFIX + CassandraConnectorConstants.CONTACT_POINTS_PROP));
     }
 
-    if (this.environment.containsProperty(MariaDBConstants.MARIADB_HOST_PROP)) {
-      properties.setProperty(MariaDBConstants.MARIADB_HOST_PROP, this.environment.getProperty(MariaDBConstants.MARIADB_HOST_PROP));
+    if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_HOST_PROP)) {
+      properties.setProperty(MariaDBConstants.MARIADB_HOST_PROP, this.environment.getProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_HOST_PROP));
     }
 
-    if (this.environment.containsProperty(MariaDBConstants.MARIADB_USER_PROP)) {
-      properties.setProperty(MariaDBConstants.MARIADB_USER_PROP, this.environment.getProperty(MariaDBConstants.MARIADB_USER_PROP));
+    if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_USER_PROP)) {
+      properties.setProperty(MariaDBConstants.MARIADB_USER_PROP, this.environment.getProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_USER_PROP));
     }
 
-    if (this.environment.containsProperty(MariaDBConstants.MARIADB_PASSWORD_PROP)) {
-      properties.setProperty(MariaDBConstants.MARIADB_PASSWORD_PROP, this.environment.getProperty(MariaDBConstants.MARIADB_PASSWORD_PROP));
+    if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_PASSWORD_PROP)) {
+      properties.setProperty(MariaDBConstants.MARIADB_PASSWORD_PROP, this.environment.getProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_PASSWORD_PROP));
     }
   }
 }
