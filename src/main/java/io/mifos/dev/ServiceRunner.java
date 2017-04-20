@@ -116,15 +116,17 @@ public class ServiceRunner {
   @Before
   public void before() throws Exception
   {
-    // start embedded Cassandra
-    EmbeddedCassandraServerHelper.startEmbeddedCassandra(TimeUnit.SECONDS.toMillis(30L));
-    // start embedded MariaDB
-    ServiceRunner.embeddedMariaDb = DB.newEmbeddedDB(
-        DBConfigurationBuilder.newBuilder()
-            .setPort(3306)
-            .build()
-    );
-    ServiceRunner.embeddedMariaDb.start();
+    if (!this.environment.containsProperty("demoserver.persistent")) {
+      // start embedded Cassandra
+      EmbeddedCassandraServerHelper.startEmbeddedCassandra(TimeUnit.SECONDS.toMillis(30L));
+      // start embedded MariaDB
+      ServiceRunner.embeddedMariaDb = DB.newEmbeddedDB(
+          DBConfigurationBuilder.newBuilder()
+              .setPort(3306)
+              .build()
+      );
+      ServiceRunner.embeddedMariaDb.start();
+    }
 
     ServiceRunner.provisionerService =
         new Microservice<>(Provisioner.class, "provisioner", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
@@ -162,14 +164,18 @@ public class ServiceRunner {
     ServiceRunner.identityService.kill();
     ServiceRunner.provisionerService.kill();
 
-    ServiceRunner.embeddedMariaDb.stop();
-
-//    EmbeddedCassandraServerHelper.cleanEmbeddedCassandra();
+    if (!this.environment.containsProperty("demoserver.persistent")) {
+      ServiceRunner.embeddedMariaDb.stop();
+      EmbeddedCassandraServerHelper.cleanEmbeddedCassandra();
+    }
   }
 
   @Test
   public void startDevServer() throws Exception {
-    this.provisionAppsViaSeshat();
+
+    if (this.environment.containsProperty("demoserver.provision")) {
+      this.provisionAppsViaSeshat();
+    }
 
     System.out.println("Identity Service: " + ServiceRunner.identityService.getProcessEnvironment().serverURI());
     System.out.println("Office Service: " + ServiceRunner.officeClient.getProcessEnvironment().serverURI());
