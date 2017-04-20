@@ -251,12 +251,12 @@ public class ServiceRunner {
     );
 
     final List<Tenant> tenantsToCreate = Arrays.asList(
-        TenantBuilder.create("playground", "A place to mess around and have fun", "playground"),
-        TenantBuilder.create("demo-cccu", "Demo for CCCU", "demo_cccu"),
-        TenantBuilder.create("SKCUKNS1", "St Kitts Cooperative Credit Union", "SKCUKNS1"),
-        TenantBuilder.create("PCCUKNS1", "Police Cooperative Credit Union", "PCCUKNS1"),
-        TenantBuilder.create("FCCUKNS1", "FND Cooperative Credit Union", "FCCUKNS1"),
-        TenantBuilder.create("NCCUKNN1", "Nevis Cooperative Credit Union", "NCCUKNN1")
+        TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "playground", "A place to mess around and have fun", "playground"),
+        TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "demo-cccu", "Demo for CCCU", "demo_cccu"),
+        TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "SKCUKNS1", "St Kitts Cooperative Credit Union", "SKCUKNS1"),
+        TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "PCCUKNS1", "Police Cooperative Credit Union", "PCCUKNS1"),
+        TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "FCCUKNS1", "FND Cooperative Credit Union", "FCCUKNS1"),
+        TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "NCCUKNN1", "Nevis Cooperative Credit Union", "NCCUKNN1")
     );
 
     try (final AutoSeshat ignored = new AutoSeshat(authenticationResponse.getToken())) {
