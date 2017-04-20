@@ -24,7 +24,9 @@ import io.mifos.core.api.context.AutoSeshat;
 import io.mifos.core.api.context.AutoUserContext;
 import io.mifos.core.api.util.ApiConstants;
 import io.mifos.core.api.util.ApiFactory;
+import io.mifos.core.cassandra.util.CassandraConnectorConstants;
 import io.mifos.core.lang.AutoTenantContext;
+import io.mifos.core.mariadb.util.MariaDBConstants;
 import io.mifos.core.test.env.TestEnvironment;
 import io.mifos.core.test.listener.EventRecorder;
 import io.mifos.core.test.servicestarter.ActiveMQForTest;
@@ -49,6 +51,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.Base64Utils;
 
@@ -103,6 +106,9 @@ public class ServiceRunner {
   @Autowired
   private EventRecorder eventRecorder;
 
+  @Autowired
+  private Environment environment;
+
   public ServiceRunner() {
     super();
   }
@@ -134,6 +140,7 @@ public class ServiceRunner {
     generalProperties.setProperty("bonecp.maxConnectionsPerPartition", "4");
     generalProperties.setProperty("bonecp.minConnectionsPerPartition", "1");
     generalProperties.setProperty("bonecp.acquireIncrement", "1");
+    this.setAdditionalProperties(generalProperties);
 
     final Properties identityProperties = new Properties();
     identityProperties.putAll(generalProperties);
@@ -205,7 +212,8 @@ public class ServiceRunner {
     );
 
     final List<Tenant> tenantsToCreate = Arrays.asList(
-        TenantBuilder.create("demo-cccu", "demo for CCCU", "demo_cccu"),
+        TenantBuilder.create("playground", "A place to mess around and have fun", "playground"),
+        TenantBuilder.create("demo-cccu", "Demo for CCCU", "demo_cccu"),
         TenantBuilder.create("SKCUKNS1", "St Kitts Cooperative Credit Union", "SKCUKNS1"),
         TenantBuilder.create("PCCUKNS1", "Police Cooperative Credit Union", "PCCUKNS1"),
         TenantBuilder.create("FCCUKNS1", "FND Cooperative Credit Union", "FCCUKNS1"),
@@ -310,5 +318,23 @@ public class ServiceRunner {
     );
 
     return role;
+  }
+
+  private void setAdditionalProperties(final Properties properties) {
+    if (this.environment.containsProperty(CassandraConnectorConstants.CONTACT_POINTS_PROP)) {
+      properties.setProperty(CassandraConnectorConstants.CONTACT_POINTS_PROP, this.environment.getProperty(CassandraConnectorConstants.CONTACT_POINTS_PROP));
+    }
+
+    if (this.environment.containsProperty(MariaDBConstants.MARIADB_HOST_PROP)) {
+      properties.setProperty(MariaDBConstants.MARIADB_HOST_PROP, this.environment.getProperty(MariaDBConstants.MARIADB_HOST_PROP));
+    }
+
+    if (this.environment.containsProperty(MariaDBConstants.MARIADB_USER_PROP)) {
+      properties.setProperty(MariaDBConstants.MARIADB_USER_PROP, this.environment.getProperty(MariaDBConstants.MARIADB_USER_PROP));
+    }
+
+    if (this.environment.containsProperty(MariaDBConstants.MARIADB_PASSWORD_PROP)) {
+      properties.setProperty(MariaDBConstants.MARIADB_PASSWORD_PROP, this.environment.getProperty(MariaDBConstants.MARIADB_PASSWORD_PROP));
+    }
   }
 }
