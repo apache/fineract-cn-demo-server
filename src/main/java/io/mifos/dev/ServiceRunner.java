@@ -133,6 +133,23 @@ public class ServiceRunner {
     final TestEnvironment provisionerTestEnvironment = provisionerService.getProcessEnvironment();
     provisionerTestEnvironment.addSystemPrivateKeyToProperties();
     provisionerTestEnvironment.setProperty("system.initialclientid", ServiceRunner.CLIENT_ID);
+
+    if (this.environment.containsProperty(CassandraConnectorConstants.CONTACT_POINTS_PROP)) {
+      provisionerTestEnvironment.setProperty(CassandraConnectorConstants.CONTACT_POINTS_PROP, this.environment.getProperty(CassandraConnectorConstants.CONTACT_POINTS_PROP));
+    }
+
+    if (this.environment.containsProperty(MariaDBConstants.MARIADB_HOST_PROP)) {
+      provisionerTestEnvironment.setProperty(MariaDBConstants.MARIADB_HOST_PROP, this.environment.getProperty(MariaDBConstants.MARIADB_HOST_PROP));
+    }
+
+    if (this.environment.containsProperty(MariaDBConstants.MARIADB_USER_PROP)) {
+      provisionerTestEnvironment.setProperty(MariaDBConstants.MARIADB_USER_PROP, this.environment.getProperty(MariaDBConstants.MARIADB_USER_PROP));
+    }
+
+    if (this.environment.containsProperty(MariaDBConstants.MARIADB_PASSWORD_PROP)) {
+      provisionerTestEnvironment.setProperty(MariaDBConstants.MARIADB_PASSWORD_PROP, this.environment.getProperty(MariaDBConstants.MARIADB_PASSWORD_PROP));
+    }
+
     ServiceRunner.provisionerService.start();
     ServiceRunner.provisionerService.setApiFactory(apiFactory);
 
