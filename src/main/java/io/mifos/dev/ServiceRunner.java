@@ -141,6 +141,16 @@ public class ServiceRunner {
       System.out.println(provisionerTestEnvironment.getProperty(CassandraConnectorConstants.CONTACT_POINTS_PROP));
     }
 
+    if (this.environment.containsProperty(CassandraConnectorConstants.CLUSTER_USER_PROP)) {
+      provisionerTestEnvironment.setProperty(CassandraConnectorConstants.CLUSTER_USER_PROP, this.environment.getProperty(CassandraConnectorConstants.CLUSTER_USER_PROP));
+      System.out.println(provisionerTestEnvironment.getProperty(CassandraConnectorConstants.CLUSTER_USER_PROP));
+    }
+
+    if (this.environment.containsProperty(CassandraConnectorConstants.CLUSTER_PASSWORD_PROP)) {
+      provisionerTestEnvironment.setProperty(CassandraConnectorConstants.CLUSTER_PASSWORD_PROP, this.environment.getProperty(CassandraConnectorConstants.CLUSTER_PASSWORD_PROP));
+      System.out.println(provisionerTestEnvironment.getProperty(CassandraConnectorConstants.CLUSTER_PASSWORD_PROP));
+    }
+
     if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_HOST_PROP)) {
       provisionerTestEnvironment.setProperty(MariaDBConstants.MARIADB_HOST_PROP, this.environment.getProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_HOST_PROP));
       System.out.println(provisionerTestEnvironment.getProperty(MariaDBConstants.MARIADB_HOST_PROP));
@@ -352,6 +362,16 @@ public class ServiceRunner {
   private void setAdditionalProperties(final Properties properties) {
     if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + CassandraConnectorConstants.CONTACT_POINTS_PROP)) {
       properties.setProperty(CassandraConnectorConstants.CONTACT_POINTS_PROP, this.environment.getProperty(ServiceRunner.CUSTOM_PROP_PREFIX + CassandraConnectorConstants.CONTACT_POINTS_PROP));
+    }
+
+    if (this.environment.containsProperty(CassandraConnectorConstants.CLUSTER_USER_PROP)) {
+      properties.setProperty(CassandraConnectorConstants.CLUSTER_USER_PROP, this.environment.getProperty(CassandraConnectorConstants.CLUSTER_USER_PROP));
+      System.out.println(properties.getProperty(CassandraConnectorConstants.CLUSTER_USER_PROP));
+    }
+
+    if (this.environment.containsProperty(CassandraConnectorConstants.CLUSTER_PASSWORD_PROP)) {
+      properties.setProperty(CassandraConnectorConstants.CLUSTER_PASSWORD_PROP, this.environment.getProperty(CassandraConnectorConstants.CLUSTER_PASSWORD_PROP));
+      System.out.println(properties.getProperty(CassandraConnectorConstants.CLUSTER_PASSWORD_PROP));
     }
 
     if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_HOST_PROP)) {
