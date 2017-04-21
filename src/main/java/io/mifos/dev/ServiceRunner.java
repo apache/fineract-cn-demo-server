@@ -27,22 +27,33 @@ import io.mifos.core.api.util.ApiFactory;
 import io.mifos.core.cassandra.util.CassandraConnectorConstants;
 import io.mifos.core.lang.AutoTenantContext;
 import io.mifos.core.mariadb.util.MariaDBConstants;
-import io.mifos.core.test.env.TestEnvironment;
 import io.mifos.core.test.listener.EventRecorder;
 import io.mifos.core.test.servicestarter.ActiveMQForTest;
 import io.mifos.core.test.servicestarter.EurekaForTest;
 import io.mifos.core.test.servicestarter.IntegrationTestEnvironment;
 import io.mifos.core.test.servicestarter.Microservice;
 import io.mifos.customer.api.v1.client.CustomerManager;
-import io.mifos.identity.api.v1.events.EventConstants;
 import io.mifos.identity.api.v1.client.IdentityManager;
-import io.mifos.identity.api.v1.domain.*;
+import io.mifos.identity.api.v1.domain.Authentication;
+import io.mifos.identity.api.v1.domain.Password;
+import io.mifos.identity.api.v1.domain.Permission;
+import io.mifos.identity.api.v1.domain.Role;
+import io.mifos.identity.api.v1.domain.UserWithPassword;
+import io.mifos.identity.api.v1.events.EventConstants;
 import io.mifos.office.api.v1.client.OrganizationManager;
 import io.mifos.portfolio.api.v1.client.PortfolioManager;
 import io.mifos.provisioner.api.v1.client.Provisioner;
-import io.mifos.provisioner.api.v1.domain.*;
+import io.mifos.provisioner.api.v1.domain.Application;
+import io.mifos.provisioner.api.v1.domain.AssignedApplication;
+import io.mifos.provisioner.api.v1.domain.AuthenticationResponse;
+import io.mifos.provisioner.api.v1.domain.IdentityManagerInitialization;
+import io.mifos.provisioner.api.v1.domain.Tenant;
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,6 +122,9 @@ public class ServiceRunner {
   @Autowired
   private Environment environment;
 
+  private boolean isPersistent;
+  private boolean shouldProvision;
+
   public ServiceRunner() {
     super();
   }
@@ -118,7 +132,10 @@ public class ServiceRunner {
   @Before
   public void before() throws Exception
   {
-    if (!this.environment.containsProperty("demoserver.persistent")) {
+    this.isPersistent = this.environment.containsProperty("demoserver.persistent");
+    this.shouldProvision = this.environment.containsProperty("demoserver.provision");
+
+    if (!this.isPersistent) {
       // start embedded Cassandra
       EmbeddedCassandraServerHelper.startEmbeddedCassandra(TimeUnit.SECONDS.toMillis(30L));
       // start embedded MariaDB
@@ -130,45 +147,6 @@ public class ServiceRunner {
       ServiceRunner.embeddedMariaDb.start();
     }
 
-    ServiceRunner.provisionerService =
-        new Microservice<>(Provisioner.class, "provisioner", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-    final TestEnvironment provisionerTestEnvironment = provisionerService.getProcessEnvironment();
-    provisionerTestEnvironment.addSystemPrivateKeyToProperties();
-    provisionerTestEnvironment.setProperty("system.initialclientid", ServiceRunner.CLIENT_ID);
-
-    if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + CassandraConnectorConstants.CONTACT_POINTS_PROP)) {
-      provisionerTestEnvironment.setProperty(CassandraConnectorConstants.CONTACT_POINTS_PROP, this.environment.getProperty(ServiceRunner.CUSTOM_PROP_PREFIX + CassandraConnectorConstants.CONTACT_POINTS_PROP));
-      System.out.println(provisionerTestEnvironment.getProperty(CassandraConnectorConstants.CONTACT_POINTS_PROP));
-    }
-
-    if (this.environment.containsProperty(CassandraConnectorConstants.CLUSTER_USER_PROP)) {
-      provisionerTestEnvironment.setProperty(CassandraConnectorConstants.CLUSTER_USER_PROP, this.environment.getProperty(CassandraConnectorConstants.CLUSTER_USER_PROP));
-      System.out.println(provisionerTestEnvironment.getProperty(CassandraConnectorConstants.CLUSTER_USER_PROP));
-    }
-
-    if (this.environment.containsProperty(CassandraConnectorConstants.CLUSTER_PASSWORD_PROP)) {
-      provisionerTestEnvironment.setProperty(CassandraConnectorConstants.CLUSTER_PASSWORD_PROP, this.environment.getProperty(CassandraConnectorConstants.CLUSTER_PASSWORD_PROP));
-      System.out.println(provisionerTestEnvironment.getProperty(CassandraConnectorConstants.CLUSTER_PASSWORD_PROP));
-    }
-
-    if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_HOST_PROP)) {
-      provisionerTestEnvironment.setProperty(MariaDBConstants.MARIADB_HOST_PROP, this.environment.getProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_HOST_PROP));
-      System.out.println(provisionerTestEnvironment.getProperty(MariaDBConstants.MARIADB_HOST_PROP));
-    }
-
-    if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_USER_PROP)) {
-      provisionerTestEnvironment.setProperty(MariaDBConstants.MARIADB_USER_PROP, this.environment.getProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_USER_PROP));
-      System.out.println(provisionerTestEnvironment.getProperty(MariaDBConstants.MARIADB_USER_PROP));
-    }
-
-    if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_PASSWORD_PROP)) {
-      provisionerTestEnvironment.setProperty(MariaDBConstants.MARIADB_PASSWORD_PROP, this.environment.getProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_PASSWORD_PROP));
-      System.out.println(provisionerTestEnvironment.getProperty(MariaDBConstants.MARIADB_PASSWORD_PROP));
-    }
-
-    ServiceRunner.provisionerService.start();
-    ServiceRunner.provisionerService.setApiFactory(apiFactory);
-
     final Properties generalProperties = new Properties();
     generalProperties.setProperty("server.max-http-header-size", Integer.toString(16 * 1024));
     generalProperties.setProperty("bonecp.partitionCount", "1");
@@ -177,11 +155,10 @@ public class ServiceRunner {
     generalProperties.setProperty("bonecp.acquireIncrement", "1");
     this.setAdditionalProperties(generalProperties);
 
-    final Properties identityProperties = new Properties();
-    identityProperties.putAll(generalProperties);
-    identityProperties.setProperty("identity.token.refresh.secureCookie", "false");
-
-    ServiceRunner.identityService = this.startService(IdentityManager.class, "identity", identityProperties);
+    if (this.shouldProvision) {
+      ServiceRunner.provisionerService = this.startService(Provisioner.class, "provisioner", generalProperties);
+    }
+    ServiceRunner.identityService = this.startService(IdentityManager.class, "identity", generalProperties);
     ServiceRunner.officeClient = this.startService(OrganizationManager.class, "office", generalProperties);
     ServiceRunner.customerClient = this.startService(CustomerManager.class, "customer", generalProperties);
     ServiceRunner.accountingClient = this.startService(LedgerManager.class, "accounting", generalProperties);
@@ -195,9 +172,8 @@ public class ServiceRunner {
     ServiceRunner.customerClient.kill();
     ServiceRunner.officeClient.kill();
     ServiceRunner.identityService.kill();
-    ServiceRunner.provisionerService.kill();
 
-    if (!this.environment.containsProperty("demoserver.persistent")) {
+    if (!isPersistent) {
       ServiceRunner.embeddedMariaDb.stop();
       EmbeddedCassandraServerHelper.cleanEmbeddedCassandra();
     }
@@ -206,8 +182,9 @@ public class ServiceRunner {
   @Test
   public void startDevServer() throws Exception {
 
-    if (this.environment.containsProperty("demoserver.provision")) {
+    if (this.shouldProvision) {
       this.provisionAppsViaSeshat();
+      ServiceRunner.provisionerService.kill();
     }
 
     System.out.println("Identity Service: " + ServiceRunner.identityService.getProcessEnvironment().serverURI());
@@ -230,8 +207,15 @@ public class ServiceRunner {
   private <T> Microservice<T> startService(final Class<T> serviceClass, final String serviceName, final Properties properties) throws Exception {
     final Microservice<T> microservice = new Microservice<>(serviceClass, serviceName, "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
     if (properties !=null) {
-      properties.forEach((key, value) ->
-              microservice.getProcessEnvironment().setProperty(key.toString(), value.toString()));
+      properties.forEach((key, value) -> {
+        if (serviceName.equals("provisioner")) {
+          microservice.getProcessEnvironment().addSystemPrivateKeyToProperties();
+          microservice.getProcessEnvironment().setProperty("system.initialclientid", ServiceRunner.CLIENT_ID);
+        } else if (serviceName.equals("identity")) {
+          microservice.getProcessEnvironment().setProperty("identity.token.refresh.secureCookie", "false");
+        }
+          microservice.getProcessEnvironment().setProperty(key.toString(), value.toString());
+      });
     }
     microservice.start();
     microservice.setApiFactory(this.apiFactory);
@@ -366,12 +350,10 @@ public class ServiceRunner {
 
     if (this.environment.containsProperty(CassandraConnectorConstants.CLUSTER_USER_PROP)) {
       properties.setProperty(CassandraConnectorConstants.CLUSTER_USER_PROP, this.environment.getProperty(CassandraConnectorConstants.CLUSTER_USER_PROP));
-      System.out.println(properties.getProperty(CassandraConnectorConstants.CLUSTER_USER_PROP));
     }
 
     if (this.environment.containsProperty(CassandraConnectorConstants.CLUSTER_PASSWORD_PROP)) {
       properties.setProperty(CassandraConnectorConstants.CLUSTER_PASSWORD_PROP, this.environment.getProperty(CassandraConnectorConstants.CLUSTER_PASSWORD_PROP));
-      System.out.println(properties.getProperty(CassandraConnectorConstants.CLUSTER_PASSWORD_PROP));
     }
 
     if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_HOST_PROP)) {
