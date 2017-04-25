@@ -122,6 +122,7 @@ public class ServiceRunner {
   @Autowired
   private Environment environment;
 
+  private Properties generalProperties;
   private boolean isPersistent;
   private boolean shouldProvision;
 
@@ -147,22 +148,19 @@ public class ServiceRunner {
       ServiceRunner.embeddedMariaDb.start();
     }
 
-    final Properties generalProperties = new Properties();
-    generalProperties.setProperty("server.max-http-header-size", Integer.toString(16 * 1024));
-    generalProperties.setProperty("bonecp.partitionCount", "1");
-    generalProperties.setProperty("bonecp.maxConnectionsPerPartition", "4");
-    generalProperties.setProperty("bonecp.minConnectionsPerPartition", "1");
-    generalProperties.setProperty("bonecp.acquireIncrement", "1");
-    this.setAdditionalProperties(generalProperties);
+    this.generalProperties = new Properties();
+    this.generalProperties.setProperty("server.max-http-header-size", Integer.toString(16 * 1024));
+    this.generalProperties.setProperty("bonecp.partitionCount", "1");
+    this.generalProperties.setProperty("bonecp.maxConnectionsPerPartition", "4");
+    this.generalProperties.setProperty("bonecp.minConnectionsPerPartition", "1");
+    this.generalProperties.setProperty("bonecp.acquireIncrement", "1");
+    this.setAdditionalProperties(this.generalProperties);
 
-    if (this.shouldProvision) {
-      ServiceRunner.provisionerService = this.startService(Provisioner.class, "provisioner", generalProperties);
-    }
-    ServiceRunner.identityService = this.startService(IdentityManager.class, "identity", generalProperties);
-    ServiceRunner.officeClient = this.startService(OrganizationManager.class, "office", generalProperties);
-    ServiceRunner.customerClient = this.startService(CustomerManager.class, "customer", generalProperties);
-    ServiceRunner.accountingClient = this.startService(LedgerManager.class, "accounting", generalProperties);
-    ServiceRunner.portfolioClient = this.startService(PortfolioManager.class, "portfolio", generalProperties);
+    ServiceRunner.identityService = this.startService(IdentityManager.class, "identity", this.generalProperties);
+    ServiceRunner.officeClient = this.startService(OrganizationManager.class, "office", this.generalProperties);
+    ServiceRunner.customerClient = this.startService(CustomerManager.class, "customer", this.generalProperties);
+    ServiceRunner.accountingClient = this.startService(LedgerManager.class, "accounting", this.generalProperties);
+    ServiceRunner.portfolioClient = this.startService(PortfolioManager.class, "portfolio", this.generalProperties);
   }
 
   @After
@@ -182,10 +180,15 @@ public class ServiceRunner {
   @Test
   public void startDevServer() throws Exception {
 
+    ServiceRunner.provisionerService = this.startService(Provisioner.class, "provisioner", this.generalProperties);
+
     if (this.shouldProvision) {
       this.provisionAppsViaSeshat();
-      ServiceRunner.provisionerService.kill();
+    } else {
+      this.migrateServices();
     }
+
+    ServiceRunner.provisionerService.kill();
 
     System.out.println("Identity Service: " + ServiceRunner.identityService.getProcessEnvironment().serverURI());
     System.out.println("Office Service: " + ServiceRunner.officeClient.getProcessEnvironment().serverURI());
@@ -220,6 +223,30 @@ public class ServiceRunner {
     microservice.start();
     microservice.setApiFactory(this.apiFactory);
     return microservice;
+  }
+
+  private void migrateServices() throws Exception {
+    final AuthenticationResponse authenticationResponse =
+        ServiceRunner.provisionerService.api().authenticate(ServiceRunner.CLIENT_ID, ApiConstants.SYSTEM_SU, "oS/0IiAME/2unkN1momDrhAdNKOhGykYFH/mJN20");
+
+    try (final AutoSeshat ignored = new AutoSeshat(authenticationResponse.getToken())) {
+      final List<Tenant> tenants = ServiceRunner.provisionerService.api().getTenants();
+      tenants.forEach(tenant -> {
+        final List<AssignedApplication> assignedApplications = ServiceRunner.provisionerService.api().getAssignedApplications(tenant.getIdentifier());
+        assignedApplications.forEach(assignedApplication -> {
+          if (assignedApplication.getName().equals(ServiceRunner.identityService.name())) {
+            ServiceRunner.provisionerService.api().assignIdentityManager(tenant.getIdentifier(), assignedApplication);
+          } else {
+            ServiceRunner.provisionerService.api().assignApplications(tenant.getIdentifier(), Collections.singletonList(assignedApplication));
+            try {
+              Thread.sleep(5000L);
+            } catch (InterruptedException e) {
+              //do nothing
+            }
+          }
+        });
+      });
+    }
   }
 
   private void provisionAppsViaSeshat() throws Exception {
