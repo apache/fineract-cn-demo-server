@@ -98,6 +98,15 @@ git push origin develop
 TIMEOUT /T 5
 cd ..
 
+REM pull permitted-feign-client
+cd permitted-feign-client
+git checkout develop
+git pull upstream develop
+CALL gradlew publishToMavenLocal
+git push origin develop
+TIMEOUT /T 5
+cd ..
+
 REM pull provisioner
 cd provisioner
 git checkout develop
