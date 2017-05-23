@@ -113,6 +113,15 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
+REM initialize permitted-feign-client
+git clone https://github.com/%githubAccount%/permitted-feign-client.git
+cd permitted-feign-client
+git remote add upstream https://github.com/mifosio/permitted-feign-client.git
+git checkout develop
+CALL gradlew publishToMavenLocal
+TIMEOUT /T 5
+cd ..
+
 REM initialze provisioner
 git clone https://github.com/%githubAccount%/provisioner.git
 cd provisioner

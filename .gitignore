@@ -15,3 +15,7 @@ gradle-app.setting
 *.log
 
 *.toDelete
+
+.DS_Store
+scripts/.DS_Store
+src/.DS_Store
