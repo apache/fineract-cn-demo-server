@@ -33,6 +33,7 @@ import io.mifos.core.test.servicestarter.EurekaForTest;
 import io.mifos.core.test.servicestarter.IntegrationTestEnvironment;
 import io.mifos.core.test.servicestarter.Microservice;
 import io.mifos.customer.api.v1.client.CustomerManager;
+import io.mifos.deposit.api.v1.client.DepositAccountManager;
 import io.mifos.identity.api.v1.client.IdentityManager;
 import io.mifos.identity.api.v1.domain.Authentication;
 import io.mifos.identity.api.v1.domain.Password;
@@ -84,6 +85,7 @@ public class ServiceRunner {
   private static Microservice<CustomerManager> customerClient;
   private static Microservice<LedgerManager> accountingClient;
   private static Microservice<PortfolioManager> portfolioClient;
+  private static Microservice<DepositAccountManager> depositClient;
 
   private static DB embeddedMariaDb;
 
@@ -161,10 +163,12 @@ public class ServiceRunner {
     ServiceRunner.customerClient = this.startService(CustomerManager.class, "customer", this.generalProperties);
     ServiceRunner.accountingClient = this.startService(LedgerManager.class, "accounting", this.generalProperties);
     ServiceRunner.portfolioClient = this.startService(PortfolioManager.class, "portfolio", this.generalProperties);
+    ServiceRunner.depositClient = this.startService(DepositAccountManager.class, "deposit-account-management", this.generalProperties);
   }
 
   @After
   public void tearDown() throws Exception {
+    ServiceRunner.depositClient.kill();
     ServiceRunner.portfolioClient.kill();
     ServiceRunner.accountingClient.kill();
     ServiceRunner.customerClient.kill();
@@ -195,6 +199,7 @@ public class ServiceRunner {
     System.out.println("Customer Service: " + ServiceRunner.customerClient.getProcessEnvironment().serverURI());
     System.out.println("Accounting Service: " + ServiceRunner.accountingClient.getProcessEnvironment().serverURI());
     System.out.println("Portfolio Service: " + ServiceRunner.portfolioClient.getProcessEnvironment().serverURI());
+    System.out.println("Deposit Service: " + ServiceRunner.depositClient.getProcessEnvironment().serverURI());
 
     boolean run = true;
 
@@ -258,7 +263,8 @@ public class ServiceRunner {
         ApplicationBuilder.create(ServiceRunner.officeClient.name(), ServiceRunner.officeClient.uri()),
         ApplicationBuilder.create(ServiceRunner.customerClient.name(), ServiceRunner.customerClient.uri()),
         ApplicationBuilder.create(ServiceRunner.accountingClient.name(), ServiceRunner.accountingClient.uri()),
-        ApplicationBuilder.create(ServiceRunner.portfolioClient.name(), ServiceRunner.portfolioClient.uri())
+        ApplicationBuilder.create(ServiceRunner.portfolioClient.name(), ServiceRunner.portfolioClient.uri()),
+        ApplicationBuilder.create(ServiceRunner.depositClient.name(), ServiceRunner.depositClient.uri())
     );
 
     final List<Tenant> tenantsToCreate = Arrays.asList(
