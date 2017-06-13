@@ -20,6 +20,7 @@ import ch.vorburger.mariadb4j.DBConfigurationBuilder;
 import io.mifos.accounting.api.v1.client.LedgerManager;
 import io.mifos.anubis.api.v1.domain.AllowedOperation;
 import io.mifos.core.api.config.EnableApiFactory;
+import io.mifos.core.api.context.AutoGuest;
 import io.mifos.core.api.context.AutoSeshat;
 import io.mifos.core.api.context.AutoUserContext;
 import io.mifos.core.api.util.ApiConstants;
@@ -27,6 +28,8 @@ import io.mifos.core.api.util.ApiFactory;
 import io.mifos.core.cassandra.util.CassandraConnectorConstants;
 import io.mifos.core.lang.AutoTenantContext;
 import io.mifos.core.mariadb.util.MariaDBConstants;
+import io.mifos.core.test.env.ExtraProperties;
+import io.mifos.core.test.listener.EnableEventRecording;
 import io.mifos.core.test.listener.EventRecorder;
 import io.mifos.core.test.servicestarter.ActiveMQForTest;
 import io.mifos.core.test.servicestarter.EurekaForTest;
@@ -35,31 +38,27 @@ import io.mifos.core.test.servicestarter.Microservice;
 import io.mifos.customer.api.v1.client.CustomerManager;
 import io.mifos.deposit.api.v1.client.DepositAccountManager;
 import io.mifos.identity.api.v1.client.IdentityManager;
-import io.mifos.identity.api.v1.domain.Authentication;
-import io.mifos.identity.api.v1.domain.Password;
-import io.mifos.identity.api.v1.domain.Permission;
-import io.mifos.identity.api.v1.domain.Role;
-import io.mifos.identity.api.v1.domain.UserWithPassword;
+import io.mifos.identity.api.v1.domain.*;
+import io.mifos.identity.api.v1.events.ApplicationPermissionEvent;
+import io.mifos.identity.api.v1.events.ApplicationPermissionUserEvent;
+import io.mifos.identity.api.v1.events.ApplicationSignatureEvent;
 import io.mifos.identity.api.v1.events.EventConstants;
 import io.mifos.office.api.v1.client.OrganizationManager;
 import io.mifos.portfolio.api.v1.client.PortfolioManager;
 import io.mifos.provisioner.api.v1.client.Provisioner;
-import io.mifos.provisioner.api.v1.domain.Application;
-import io.mifos.provisioner.api.v1.domain.AssignedApplication;
-import io.mifos.provisioner.api.v1.domain.AuthenticationResponse;
-import io.mifos.provisioner.api.v1.domain.IdentityManagerInitialization;
-import io.mifos.provisioner.api.v1.domain.Tenant;
+import io.mifos.provisioner.api.v1.domain.*;
+import io.mifos.rhythm.api.v1.client.RhythmManager;
+import io.mifos.rhythm.api.v1.events.BeatEvent;
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.eclipse.aether.resolution.ArtifactResolutionException;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -67,10 +66,10 @@ import org.springframework.core.env.Environment;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.Base64Utils;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Properties;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
@@ -79,13 +78,18 @@ import java.util.concurrent.TimeUnit;
 @SpringBootTest()
 public class ServiceRunner {
   private static final String CLIENT_ID = "service-runner";
+  private static final String SCHEDULER_USER_NAME = "imhotep";
+  private static final String ADMIN_USER_NAME = "antony";
+  private static final String TEST_LOGGER = "test-logger";
+
   private static Microservice<Provisioner> provisionerService;
-  private static Microservice<IdentityManager> identityService;
-  private static Microservice<OrganizationManager> officeClient;
-  private static Microservice<CustomerManager> customerClient;
-  private static Microservice<LedgerManager> accountingClient;
-  private static Microservice<PortfolioManager> portfolioClient;
-  private static Microservice<DepositAccountManager> depositClient;
+  private static Microservice<IdentityManager> identityManager;
+  private static Microservice<RhythmManager> rhythmManager;
+  private static Microservice<OrganizationManager> organizationManager;
+  private static Microservice<CustomerManager> customerManager;
+  private static Microservice<LedgerManager> ledgerManager;
+  private static Microservice<PortfolioManager> portfolioManager;
+  private static Microservice<DepositAccountManager> depositAccountManager;
 
   private static DB embeddedMariaDb;
 
@@ -94,15 +98,16 @@ public class ServiceRunner {
   @Configuration
   @ActiveMQForTest.EnableActiveMQListen
   @EnableApiFactory
+  @EnableEventRecording(maxWait = 60_000)
   @ComponentScan("io.mifos.dev.listener")
   public static class TestConfiguration {
     public TestConfiguration() {
       super();
     }
 
-    @Bean()
+    @Bean(name = TEST_LOGGER)
     public Logger logger() {
-      return LoggerFactory.getLogger("test-logger");
+      return LoggerFactory.getLogger(TEST_LOGGER);
     }
   }
 
@@ -124,7 +129,13 @@ public class ServiceRunner {
   @Autowired
   private Environment environment;
 
-  private Properties generalProperties;
+  @Autowired
+  protected DiscoveryClient discoveryClient;
+
+  @Autowired
+  @Qualifier(TEST_LOGGER)
+  private Logger logger;
+
   private boolean isPersistent;
   private boolean shouldProvision;
 
@@ -150,30 +161,57 @@ public class ServiceRunner {
       ServiceRunner.embeddedMariaDb.start();
     }
 
-    this.generalProperties = new Properties();
-    this.generalProperties.setProperty("server.max-http-header-size", Integer.toString(16 * 1024));
-    this.generalProperties.setProperty("bonecp.partitionCount", "1");
-    this.generalProperties.setProperty("bonecp.maxConnectionsPerPartition", "4");
-    this.generalProperties.setProperty("bonecp.minConnectionsPerPartition", "1");
-    this.generalProperties.setProperty("bonecp.acquireIncrement", "1");
-    this.setAdditionalProperties(this.generalProperties);
+    ExtraProperties generalProperties = new ExtraProperties();
+    generalProperties.setProperty("server.max-http-header-size", Integer.toString(16 * 1024));
+    generalProperties.setProperty("bonecp.partitionCount", "1");
+    generalProperties.setProperty("bonecp.maxConnectionsPerPartition", "4");
+    generalProperties.setProperty("bonecp.minConnectionsPerPartition", "1");
+    generalProperties.setProperty("bonecp.acquireIncrement", "1");
+    this.setAdditionalProperties(generalProperties);
 
-    ServiceRunner.identityService = this.startService(IdentityManager.class, "identity", this.generalProperties);
-    ServiceRunner.officeClient = this.startService(OrganizationManager.class, "office", this.generalProperties);
-    ServiceRunner.customerClient = this.startService(CustomerManager.class, "customer", this.generalProperties);
-    ServiceRunner.accountingClient = this.startService(LedgerManager.class, "accounting", this.generalProperties);
-    ServiceRunner.portfolioClient = this.startService(PortfolioManager.class, "portfolio", this.generalProperties);
-    ServiceRunner.depositClient = this.startService(DepositAccountManager.class, "deposit-account-management", this.generalProperties);
+    ServiceRunner.provisionerService = new Microservice<>(Provisioner.class, "provisioner", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+    provisionerService.getProcessEnvironment().addSystemPrivateKeyToProperties();
+    provisionerService.getProcessEnvironment().setProperty("system.initialclientid", ServiceRunner.CLIENT_ID);
+    startService(generalProperties, provisionerService);
+
+    ServiceRunner.identityManager = new Microservice<>(IdentityManager.class, "identity", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT)
+            .addProperties(new ExtraProperties() {{
+              setProperty("identity.token.refresh.secureCookie", "false");}});
+    startService(generalProperties, identityManager);
+
+    ServiceRunner.rhythmManager = new Microservice<>(RhythmManager.class, "rhythm", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT)
+            .addProperties(new ExtraProperties() {{
+              setProperty("rhythm.beatCheckRate", Long.toString(TimeUnit.MINUTES.toMillis(10)));
+              setProperty("rhythm.user", SCHEDULER_USER_NAME);}});
+    startService(generalProperties, rhythmManager);
+
+    ServiceRunner.organizationManager = new Microservice<>(OrganizationManager.class, "office", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+    startService(generalProperties, organizationManager);
+
+    ServiceRunner.customerManager = new Microservice<>(CustomerManager.class, "customer", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+    startService(generalProperties, customerManager);
+
+    ServiceRunner.ledgerManager = new Microservice<>(LedgerManager.class, "accounting", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+    startService(generalProperties, ledgerManager);
+
+    ServiceRunner.portfolioManager = new Microservice<>(PortfolioManager.class, "portfolio", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT)
+            .addProperties(new ExtraProperties() {{
+              setProperty("portfolio.bookInterestAsUser", SCHEDULER_USER_NAME);}});
+    startService(generalProperties, portfolioManager);
+
+    ServiceRunner.depositAccountManager = new Microservice<>(DepositAccountManager.class, "deposit-account-management", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+    startService(generalProperties, depositAccountManager);
   }
 
   @After
   public void tearDown() throws Exception {
-    ServiceRunner.depositClient.kill();
-    ServiceRunner.portfolioClient.kill();
-    ServiceRunner.accountingClient.kill();
-    ServiceRunner.customerClient.kill();
-    ServiceRunner.officeClient.kill();
-    ServiceRunner.identityService.kill();
+    ServiceRunner.depositAccountManager.kill();
+    ServiceRunner.rhythmManager.kill();
+    ServiceRunner.portfolioManager.kill();
+    ServiceRunner.ledgerManager.kill();
+    ServiceRunner.customerManager.kill();
+    ServiceRunner.organizationManager.kill();
+    ServiceRunner.identityManager.kill();
 
     if (!isPersistent) {
       ServiceRunner.embeddedMariaDb.stop();
@@ -182,24 +220,24 @@ public class ServiceRunner {
   }
 
   @Test
-  public void startDevServer() throws Exception {
-
-    ServiceRunner.provisionerService = this.startService(Provisioner.class, "provisioner", this.generalProperties);
-
-    if (this.shouldProvision) {
-      this.provisionAppsViaSeshat();
-    } else {
-      this.migrateServices();
+  public void startDevServer() throws InterruptedException, IOException, ArtifactResolutionException {
+    try {
+      if (this.shouldProvision) {
+        this.provisionAppsViaSeshat();
+      } else {
+        this.migrateServices();
+      }
+    }
+    finally {
+      ServiceRunner.provisionerService.kill();
     }
 
-    ServiceRunner.provisionerService.kill();
-
-    System.out.println("Identity Service: " + ServiceRunner.identityService.getProcessEnvironment().serverURI());
-    System.out.println("Office Service: " + ServiceRunner.officeClient.getProcessEnvironment().serverURI());
-    System.out.println("Customer Service: " + ServiceRunner.customerClient.getProcessEnvironment().serverURI());
-    System.out.println("Accounting Service: " + ServiceRunner.accountingClient.getProcessEnvironment().serverURI());
-    System.out.println("Portfolio Service: " + ServiceRunner.portfolioClient.getProcessEnvironment().serverURI());
-    System.out.println("Deposit Service: " + ServiceRunner.depositClient.getProcessEnvironment().serverURI());
+    System.out.println("Identity Service: " + ServiceRunner.identityManager.getProcessEnvironment().serverURI());
+    System.out.println("Office Service: " + ServiceRunner.organizationManager.getProcessEnvironment().serverURI());
+    System.out.println("Customer Service: " + ServiceRunner.customerManager.getProcessEnvironment().serverURI());
+    System.out.println("Accounting Service: " + ServiceRunner.ledgerManager.getProcessEnvironment().serverURI());
+    System.out.println("Portfolio Service: " + ServiceRunner.portfolioManager.getProcessEnvironment().serverURI());
+    System.out.println("Deposit Service: " + ServiceRunner.depositAccountManager.getProcessEnvironment().serverURI());
 
     boolean run = true;
 
@@ -209,28 +247,21 @@ public class ServiceRunner {
       if (nextLine != null && nextLine.equals("exit")) {
         run = false;
       }
+      eventRecorder.clear();
     }
   }
 
-  private <T> Microservice<T> startService(final Class<T> serviceClass, final String serviceName, final Properties properties) throws Exception {
-    final Microservice<T> microservice = new Microservice<>(serviceClass, serviceName, "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-    if (properties !=null) {
-      properties.forEach((key, value) -> {
-        if (serviceName.equals("provisioner")) {
-          microservice.getProcessEnvironment().addSystemPrivateKeyToProperties();
-          microservice.getProcessEnvironment().setProperty("system.initialclientid", ServiceRunner.CLIENT_ID);
-        } else if (serviceName.equals("identity")) {
-          microservice.getProcessEnvironment().setProperty("identity.token.refresh.secureCookie", "false");
-        }
-          microservice.getProcessEnvironment().setProperty(key.toString(), value.toString());
-      });
-    }
+  private void startService(ExtraProperties properties, Microservice microservice) throws InterruptedException, IOException, ArtifactResolutionException {
+    microservice.addProperties(properties);
     microservice.start();
+    final boolean registered = microservice.waitTillRegistered(discoveryClient);
+    logger.info("Service '{}' started and {} with Eureka.", microservice.name(), registered ? "registered" : "not registered");
     microservice.setApiFactory(this.apiFactory);
-    return microservice;
+
+    TimeUnit.SECONDS.sleep(20); //Give it some extra time before the next service...
   }
 
-  private void migrateServices() throws Exception {
+  private void migrateServices() {
     final AuthenticationResponse authenticationResponse =
         ServiceRunner.provisionerService.api().authenticate(ServiceRunner.CLIENT_ID, ApiConstants.SYSTEM_SU, "oS/0IiAME/2unkN1momDrhAdNKOhGykYFH/mJN20");
 
@@ -239,7 +270,7 @@ public class ServiceRunner {
       tenants.forEach(tenant -> {
         final List<AssignedApplication> assignedApplications = ServiceRunner.provisionerService.api().getAssignedApplications(tenant.getIdentifier());
         assignedApplications.forEach(assignedApplication -> {
-          if (assignedApplication.getName().equals(ServiceRunner.identityService.name())) {
+          if (assignedApplication.getName().equals(ServiceRunner.identityManager.name())) {
             ServiceRunner.provisionerService.api().assignIdentityManager(tenant.getIdentifier(), assignedApplication);
           } else {
             ServiceRunner.provisionerService.api().assignApplications(tenant.getIdentifier(), Collections.singletonList(assignedApplication));
@@ -254,17 +285,18 @@ public class ServiceRunner {
     }
   }
 
-  private void provisionAppsViaSeshat() throws Exception {
+  private void provisionAppsViaSeshat() throws InterruptedException {
     final AuthenticationResponse authenticationResponse =
         ServiceRunner.provisionerService.api().authenticate(ServiceRunner.CLIENT_ID, ApiConstants.SYSTEM_SU, "oS/0IiAME/2unkN1momDrhAdNKOhGykYFH/mJN20");
 
     final List<Application> applicationsToCreate = Arrays.asList(
-        ApplicationBuilder.create(ServiceRunner.identityService.name(), ServiceRunner.identityService.uri()),
-        ApplicationBuilder.create(ServiceRunner.officeClient.name(), ServiceRunner.officeClient.uri()),
-        ApplicationBuilder.create(ServiceRunner.customerClient.name(), ServiceRunner.customerClient.uri()),
-        ApplicationBuilder.create(ServiceRunner.accountingClient.name(), ServiceRunner.accountingClient.uri()),
-        ApplicationBuilder.create(ServiceRunner.portfolioClient.name(), ServiceRunner.portfolioClient.uri()),
-        ApplicationBuilder.create(ServiceRunner.depositClient.name(), ServiceRunner.depositClient.uri())
+            ApplicationBuilder.create(ServiceRunner.identityManager.name(), ServiceRunner.identityManager.uri()),
+            ApplicationBuilder.create(ServiceRunner.rhythmManager.name(), ServiceRunner.rhythmManager.uri()),
+            ApplicationBuilder.create(ServiceRunner.organizationManager.name(), ServiceRunner.organizationManager.uri()),
+            ApplicationBuilder.create(ServiceRunner.customerManager.name(), ServiceRunner.customerManager.uri()),
+            ApplicationBuilder.create(ServiceRunner.ledgerManager.name(), ServiceRunner.ledgerManager.uri()),
+            ApplicationBuilder.create(ServiceRunner.portfolioManager.name(), ServiceRunner.portfolioManager.uri()),
+            ApplicationBuilder.create(ServiceRunner.depositAccountManager.name(), ServiceRunner.depositAccountManager.uri())
     );
 
     final List<Tenant> tenantsToCreate = Arrays.asList(
@@ -279,53 +311,156 @@ public class ServiceRunner {
     try (final AutoSeshat ignored = new AutoSeshat(authenticationResponse.getToken())) {
       applicationsToCreate.forEach(application -> ServiceRunner.provisionerService.api().createApplication(application));
     }
-
-    final AdminPasswordHolder adminPasswordHolder = new AdminPasswordHolder();
-      tenantsToCreate.forEach(tenant -> {
+    for (final Tenant tenant : tenantsToCreate) {
         try (final AutoSeshat ignored = new AutoSeshat(authenticationResponse.getToken())) {
-          ServiceRunner.provisionerService.api().createTenant(tenant);
-          applicationsToCreate.forEach(application -> {
-            if (application.getName().equals(ServiceRunner.identityService.name())) {
-              final AssignedApplication assignedApplication = new AssignedApplication();
-              assignedApplication.setName(ServiceRunner.identityService.name());
-
-              final IdentityManagerInitialization identityManagerInitialization = ServiceRunner.provisionerService.api().assignIdentityManager(tenant.getIdentifier(), assignedApplication);
-              adminPasswordHolder.setPassword(identityManagerInitialization.getAdminPassword());
-            } else {
-              final AssignedApplication assignedApplication = new AssignedApplication();
-              assignedApplication.setName(application.getName());
-              ServiceRunner.provisionerService.api().assignApplications(tenant.getIdentifier(), Collections.singletonList(assignedApplication));
-              try {
-                Thread.sleep(5000L);
-              } catch (InterruptedException e) {
-                //do nothing
-              }
-            }
-          });
+          provisionAppsViaSeshatForTenant(tenant);
         }
-
-        try (final AutoTenantContext autoTenantContext = new AutoTenantContext(tenant.getIdentifier())) {
-          this.createAdmin(adminPasswordHolder.getPassword());
-        } catch (final Exception ex) {
-          ex.printStackTrace();
-        }
-    });
+    }
   }
 
-  private void createAdmin(final String tenantAdminPassword) throws Exception {
-    final String tenantAdminUser = "antony";
-    final Authentication adminPasswordOnlyAuthentication = ServiceRunner.identityService.api().login(tenantAdminUser, tenantAdminPassword);
-    try (final AutoUserContext ignored = new AutoUserContext(tenantAdminUser, adminPasswordOnlyAuthentication.getAccessToken()))
-    {
-      ServiceRunner.identityService.api().changeUserPassword(tenantAdminUser, new Password(tenantAdminPassword));
-      Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_PUT_USER_PASSWORD, tenantAdminUser));
-    }
-    final Authentication adminAuthentication = ServiceRunner.identityService.api().login(tenantAdminUser, tenantAdminPassword);
+  private String provisionAppsViaSeshatForTenant(final Tenant tenant) throws InterruptedException {
+    provisionerService.api().createTenant(tenant);
 
-    try (final AutoUserContext ignored = new AutoUserContext(tenantAdminUser, adminAuthentication.getAccessToken())) {
+    try (final AutoTenantContext ignored = new AutoTenantContext(tenant.getIdentifier())) {
+
+      final AssignedApplication isisAssigned = new AssignedApplication();
+      isisAssigned.setName(identityManager.name());
+
+      final IdentityManagerInitialization tenantAdminPassword
+              = provisionerService.api().assignIdentityManager(tenant.getIdentifier(), isisAssigned);
+
+
+      //Creation of the schedulerUserRole, and permitting it to create application permission requests are needed in the
+      //provisioning of portfolio.  Portfolio asks rhythm for a callback.  Rhythm asks identity for permission to send
+      //that call back.  Rhythm needs permission to ask identity directly rather than through the provisioner because
+      //the request is made outside of rhythm's initialization.
+      final UserWithPassword schedulerUser = createSchedulerUserRoleAndPassword(tenantAdminPassword.getAdminPassword());
+
+      provisionApp(tenant, rhythmManager, io.mifos.rhythm.api.v1.events.EventConstants.INITIALIZE);
+
+      Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_APPLICATION_PERMISSION, new ApplicationPermissionEvent(rhythmManager.name(), io.mifos.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT)));
+
+      final Authentication schedulerUserAuthentication;
+      try (final AutoGuest ignored2 = new AutoGuest()) {
+        enableUser(schedulerUser);
+        schedulerUserAuthentication = identityManager.api().login(schedulerUser.getIdentifier(), schedulerUser.getPassword());
+      }
+
+      try (final AutoUserContext ignored2 = new AutoUserContext(schedulerUser.getIdentifier(), schedulerUserAuthentication.getAccessToken())) {
+        identityManager.api().setApplicationPermissionEnabledForUser(
+                rhythmManager.name(),
+                io.mifos.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT,
+                schedulerUser.getIdentifier(),
+                true);
+        Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_PUT_APPLICATION_PERMISSION_USER_ENABLED, new ApplicationPermissionUserEvent(rhythmManager.name(), io.mifos.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT, schedulerUser.getIdentifier())));
+      }
+
+      provisionApp(tenant, ledgerManager, io.mifos.accounting.api.v1.EventConstants.INITIALIZE);
+
+      provisionApp(tenant, portfolioManager, io.mifos.portfolio.api.v1.events.EventConstants.INITIALIZE);
+
+      Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_PERMITTABLE_GROUP,
+              io.mifos.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name())));
+
+      for (int i = 0; i < 24; i++) {
+        Assert.assertTrue("Beat #" + i,
+                eventRecorder.wait(io.mifos.rhythm.api.v1.events.EventConstants.POST_BEAT,
+                        new BeatEvent(portfolioManager.name(), "alignment" + i)));
+      }
+
+      final Authentication schedulerAuthentication;
+      try (final AutoGuest ignored2 = new AutoGuest()) {
+        schedulerAuthentication = identityManager.api().login(schedulerUser.getIdentifier(), schedulerUser.getPassword());
+      }
+
+      try (final AutoUserContext ignored2 = new AutoUserContext(schedulerUser.getIdentifier(), schedulerAuthentication.getAccessToken())) {
+        //Allow rhythm to send a beat to portfolio as the scheduler user.
+        identityManager.api().setApplicationPermissionEnabledForUser(
+                rhythmManager.name(),
+                io.mifos.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()),
+                schedulerUser.getIdentifier(),
+                true);
+        Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_PUT_APPLICATION_PERMISSION_USER_ENABLED,
+                new ApplicationPermissionUserEvent(rhythmManager.name(),
+                        io.mifos.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()), schedulerUser.getIdentifier())));
+      }
+
+      provisionApp(tenant, depositAccountManager, io.mifos.deposit.api.v1.EventConstants.INITIALIZE);
+
+      createOrgAdminRoleAndUser(tenantAdminPassword.getAdminPassword());
+
+      return tenantAdminPassword.getAdminPassword();
+    }
+  }
+
+  private <T> void provisionApp(
+          final Tenant tenant,
+          final Microservice<T> service,
+          final String initialize_event) throws InterruptedException {
+
+    final AssignedApplication assignedApp = new AssignedApplication();
+    assignedApp.setName(service.name());
+
+    provisionerService.api().assignApplications(tenant.getIdentifier(), Collections.singletonList(assignedApp));
+
+    Assert.assertTrue(this.eventRecorder.wait(initialize_event, initialize_event));
+    Assert.assertTrue(this.eventRecorder.waitForMatch(EventConstants.OPERATION_PUT_APPLICATION_SIGNATURE,
+            (ApplicationSignatureEvent x) -> x.getApplicationIdentifier().equals(service.name())));
+  }
+
+  private UserWithPassword createSchedulerUserRoleAndPassword(String tenantAdminPassword) throws InterruptedException {
+    final Authentication adminAuthentication;
+    try (final AutoGuest ignored = new AutoGuest()) {
+      adminAuthentication = identityManager.api().login(ADMIN_USER_NAME, tenantAdminPassword);
+    }
+
+    final UserWithPassword schedulerUser;
+    try (final AutoUserContext ignored = new AutoUserContext(ADMIN_USER_NAME, adminAuthentication.getAccessToken())) {
+      final Role schedulerRole = defineSchedulerRole();
+      identityManager.api().createRole(schedulerRole);
+
+      schedulerUser = new UserWithPassword();
+      schedulerUser.setIdentifier(SCHEDULER_USER_NAME);
+      schedulerUser.setPassword(encodePassword("26500BC"));
+      schedulerUser.setRole(schedulerRole.getIdentifier());
+
+      identityManager.api().createUser(schedulerUser);
+      Assert.assertTrue(eventRecorder.wait(EventConstants.OPERATION_POST_USER, schedulerUser.getIdentifier()));
+    }
+
+    try (final AutoGuest ignored = new AutoGuest()) {
+      enableUser(schedulerUser);
+    }
+
+    return schedulerUser;
+  }
+
+  private Role defineSchedulerRole() {
+    final Permission permissionRequestionCreationPermission = new Permission();
+    permissionRequestionCreationPermission.setAllowedOperations(Collections.singleton(AllowedOperation.CHANGE));
+    permissionRequestionCreationPermission.setPermittableEndpointGroupIdentifier(io.mifos.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT);
+
+    final Permission beatPublishToPortfolioPermission = new Permission();
+    beatPublishToPortfolioPermission.setAllowedOperations(Collections.singleton(AllowedOperation.CHANGE));
+    beatPublishToPortfolioPermission.setPermittableEndpointGroupIdentifier(io.mifos.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()));
+
+    final Role role = new Role();
+    role.setIdentifier("scheduler");
+    role.setPermissions(Arrays.asList(permissionRequestionCreationPermission, beatPublishToPortfolioPermission));
+
+    return role;
+  }
+
+  private void createOrgAdminRoleAndUser(final String tenantAdminPassword) throws InterruptedException {
+    final Authentication adminAuthentication;
+    try (final AutoUserContext ignored = new AutoGuest()) {
+      adminAuthentication = ServiceRunner.identityManager.api().login(ADMIN_USER_NAME, tenantAdminPassword);
+    }
+
+    try (final AutoUserContext ignored = new AutoUserContext(ADMIN_USER_NAME, adminAuthentication.getAccessToken())) {
       final Role fimsAdministratorRole = createOrgAdministratorRole();
 
-      ServiceRunner.identityService.api().createRole(fimsAdministratorRole);
+      ServiceRunner.identityManager.api().createRole(fimsAdministratorRole);
       Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_ROLE, fimsAdministratorRole.getIdentifier()));
 
       final UserWithPassword fimsAdministratorUser = new UserWithPassword();
@@ -333,10 +468,10 @@ public class ServiceRunner {
       fimsAdministratorUser.setPassword(Base64Utils.encodeToString("init1@l".getBytes()));
       fimsAdministratorUser.setRole(fimsAdministratorRole.getIdentifier());
 
-      ServiceRunner.identityService.api().createUser(fimsAdministratorUser);
+      ServiceRunner.identityManager.api().createUser(fimsAdministratorUser);
       Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_USER, fimsAdministratorUser.getIdentifier()));
 
-      ServiceRunner.identityService.api().logout();
+      ServiceRunner.identityManager.api().logout();
     }
   }
 
@@ -376,7 +511,24 @@ public class ServiceRunner {
     return role;
   }
 
-  private void setAdditionalProperties(final Properties properties) {
+  private void enableUser(final UserWithPassword userWithPassword) throws InterruptedException {
+    final Authentication passwordOnlyAuthentication
+            = identityManager.api().login(userWithPassword.getIdentifier(), userWithPassword.getPassword());
+    try (final AutoUserContext ignored
+                 = new AutoUserContext(userWithPassword.getIdentifier(), passwordOnlyAuthentication.getAccessToken()))
+    {
+      identityManager.api().changeUserPassword(
+              userWithPassword.getIdentifier(), new Password(userWithPassword.getPassword()));
+      Assert.assertTrue(eventRecorder.wait(EventConstants.OPERATION_PUT_USER_PASSWORD,
+              userWithPassword.getIdentifier()));
+    }
+  }
+
+  private static String encodePassword(final String password) {
+    return Base64Utils.encodeToString(password.getBytes());
+  }
+
+  private void setAdditionalProperties(final ExtraProperties properties) {
     if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + CassandraConnectorConstants.CONTACT_POINTS_PROP)) {
       properties.setProperty(CassandraConnectorConstants.CONTACT_POINTS_PROP, this.environment.getProperty(ServiceRunner.CUSTOM_PROP_PREFIX + CassandraConnectorConstants.CONTACT_POINTS_PROP));
     }
