@@ -24,6 +24,7 @@ ext.versions = [
         frameworkservicestarter : '0.1.0-BUILD-SNAPSHOT',
         mifosidentity           : '0.1.0-BUILD-SNAPSHOT',
         mifosprovisioner        : '0.1.0-BUILD-SNAPSHOT',
+        mifosrhythm             : '0.1.0-BUILD-SNAPSHOT',
         mifosoffice             : '0.1.0-BUILD-SNAPSHOT',
         mifoscustomer           : '0.1.0-BUILD-SNAPSHOT',
         mifosaccounting         : '0.1.0-BUILD-SNAPSHOT',
@@ -72,9 +73,12 @@ dependencies {
             [group: 'io.mifos.office', name: 'api', version: versions.mifosoffice],
             [group: 'io.mifos.provisioner', name: 'api', version: versions.mifosprovisioner],
             [group: 'io.mifos.identity', name: 'api', version: versions.mifosidentity],
+            [group: 'io.mifos.rhythm', name: 'api', version: versions.mifosrhythm],
+            [group: 'io.mifos.rhythm', name: 'spi', version: versions.mifosrhythm],
 
             [group: 'io.mifos.customer', name: 'api', version: versions.mifoscustomer],
             [group: 'io.mifos.accounting', name: 'api', version: versions.mifosaccounting],
+            [group: 'io.mifos.accounting', name: 'importer', version: versions.mifosaccounting],
             [group: 'io.mifos.portfolio', name: 'api', version: versions.mifosportfolio],
             [group: 'io.mifos.deposit-account-management', name: 'api', version: versions.mifosdeposit],
 

@@ -23,6 +23,10 @@ import org.springframework.jms.annotation.JmsListener;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 
+/**
+ * @author Myrle Krantz
+ */
+@SuppressWarnings("unused")
 @Component
 public class PortfolioListener {
 
@@ -34,12 +38,42 @@ public class PortfolioListener {
   }
 
   @JmsListener(
-      subscription = EventConstants.DESTINATION,
-      destination = EventConstants.DESTINATION,
-      selector = EventConstants.SELECTOR_INITIALIZE
+          subscription = EventConstants.DESTINATION,
+          destination = EventConstants.DESTINATION,
+          selector = EventConstants.SELECTOR_INITIALIZE
   )
-  public void onInitialized(@Header(TenantHeaderFilter.TENANT_HEADER) final String tenant,
-                            final String payload) {
+  public void onInitialization(@Header(TenantHeaderFilter.TENANT_HEADER) final String tenant,
+                               final String payload) {
     this.eventRecorder.event(tenant, EventConstants.INITIALIZE, payload, String.class);
+  }
+
+  @JmsListener(
+          subscription = EventConstants.DESTINATION,
+          destination = EventConstants.DESTINATION,
+          selector = EventConstants.SELECTOR_POST_PRODUCT
+  )
+  public void onCreateProduct(@Header(TenantHeaderFilter.TENANT_HEADER) final String tenant,
+                              final String payload) {
+    this.eventRecorder.event(tenant, EventConstants.POST_PRODUCT, payload, String.class);
+  }
+
+  @JmsListener(
+          subscription = EventConstants.DESTINATION,
+          destination = EventConstants.DESTINATION,
+          selector = EventConstants.SELECTOR_PUT_PRODUCT
+  )
+  public void onChangeProduct(@Header(TenantHeaderFilter.TENANT_HEADER) final String tenant,
+                              final String payload) {
+    this.eventRecorder.event(tenant, EventConstants.PUT_PRODUCT, payload, String.class);
+  }
+
+  @JmsListener(
+          subscription = EventConstants.DESTINATION,
+          destination = EventConstants.DESTINATION,
+          selector = EventConstants.SELECTOR_PUT_PRODUCT_ENABLE
+  )
+  public void onEnableProduct(@Header(TenantHeaderFilter.TENANT_HEADER) final String tenant,
+                              final String payload) {
+    this.eventRecorder.event(tenant, EventConstants.PUT_PRODUCT_ENABLE, payload, String.class);
   }
 }

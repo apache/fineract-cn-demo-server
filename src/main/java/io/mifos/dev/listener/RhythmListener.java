@@ -15,9 +15,10 @@
  */
 package io.mifos.dev.listener;
 
-import io.mifos.accounting.api.v1.EventConstants;
 import io.mifos.core.lang.config.TenantHeaderFilter;
 import io.mifos.core.test.listener.EventRecorder;
+import io.mifos.rhythm.api.v1.events.BeatEvent;
+import io.mifos.rhythm.api.v1.events.EventConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.messaging.handler.annotation.Header;
@@ -28,19 +29,19 @@ import org.springframework.stereotype.Component;
  */
 @SuppressWarnings("unused")
 @Component
-public class AccountingListener {
+public class RhythmListener {
 
   private final EventRecorder eventRecorder;
 
   @Autowired
-  public AccountingListener(final EventRecorder eventRecorder) {
+  public RhythmListener(final EventRecorder eventRecorder) {
     this.eventRecorder = eventRecorder;
   }
 
   @JmsListener(
+          subscription = EventConstants.DESTINATION,
           destination = EventConstants.DESTINATION,
-          selector = EventConstants.SELECTOR_INITIALIZE,
-          subscription = EventConstants.DESTINATION
+          selector = EventConstants.SELECTOR_INITIALIZE
   )
   public void onInitialization(@Header(TenantHeaderFilter.TENANT_HEADER) final String tenant,
                                final String payload) {
@@ -48,22 +49,12 @@ public class AccountingListener {
   }
 
   @JmsListener(
+          subscription = EventConstants.DESTINATION,
           destination = EventConstants.DESTINATION,
-          selector = EventConstants.SELECTOR_POST_LEDGER,
-          subscription = EventConstants.DESTINATION
+          selector = EventConstants.SELECTOR_POST_BEAT
   )
-  public void onPostLedger(@Header(TenantHeaderFilter.TENANT_HEADER) final String tenant,
+  public void onCreateBeat(@Header(TenantHeaderFilter.TENANT_HEADER) final String tenant,
                            final String payload) {
-    this.eventRecorder.event(tenant, EventConstants.POST_LEDGER, payload, String.class);
-  }
-
-  @JmsListener(
-          destination = EventConstants.DESTINATION,
-          selector = EventConstants.SELECTOR_POST_ACCOUNT,
-          subscription = EventConstants.DESTINATION
-  )
-  public void onCreateAccount(@Header(TenantHeaderFilter.TENANT_HEADER) final String tenant,
-                              final String payload) {
-    this.eventRecorder.event(tenant, EventConstants.POST_ACCOUNT, payload, String.class);
+    this.eventRecorder.event(tenant, EventConstants.POST_BEAT, payload, BeatEvent.class);
   }
 }
