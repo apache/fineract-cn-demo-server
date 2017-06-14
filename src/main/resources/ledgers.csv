@@ -1,0 +1,53 @@
+parentIdentifier,identifier,description,type,show
+,1000,"Income",REVENUE,true
+1000,1100,"Income from Loans",REVENUE,true
+1000,1200,"Investment Income",REVENUE,true
+1000,1300,"Fees and Charges",REVENUE,true
+1000,1400,"Gain (Loss) on Sale of Loans",REVENUE,true
+1000,1500,"Miscellaneouse Income",REVENUE,true
+1000,1600,"Service Income on Loans",REVENUE,true
+1000,1700,"Trading Profits & Losses",REVENUE,true
+,2000,"Expenses",EXPENSE,true
+2000,2100,"Employee Compensation",EXPENSE,true
+2000,2200,"Employee Benefits",EXPENSE,true
+2000,2300,"Travel and Conference Expenses",EXPENSE,true
+2000,2400,"Association Dues",EXPENSE,true
+2000,2500,"Office Occupancy Expenses",EXPENSE,true
+2000,2600,"Office Operations Expenses",EXPENSE,true
+2000,2700,"Educational and Promotional Expenses",EXPENSE,true
+2000,2800,"Loan Servicing Expenses",EXPENSE,true
+2000,2900,"Professional and Outside Services",EXPENSE,true
+2000,3000,"Provision for Loan Losses",EXPENSE,true
+2000,3100,"Member Insurance",EXPENSE,true
+2000,3220,"Federal Operating Fee",EXPENSE,true
+2000,3300,"Cash Over and Short",EXPENSE,true
+2000,3400,"Interest on Borrowed Money",EXPENSE,true
+2000,3550,"Annual Meeting Expenses",EXPENSE,true
+2000,3700,"Miscellaneous Operating Expenses",EXPENSE,true
+2000,3800,"Interest (Dividend) Expense",EXPENSE,true
+,7000,"Assets",ASSET,true
+7000,7010,"Loans to Members",ASSET,true
+7000,7020,"Lines of Credit to Members",ASSET,true
+7000,7030,"Real Estate Loans",ASSET,true
+7000,7100,"Other Loans",ASSET,true
+7000,7200,"Other Receivables",ASSET,true
+7000,7300,"Cash Accounts",ASSET,true
+7000,7350,"Change Fund",ASSET,true
+7000,7400,"Investments",ASSET,true
+7000,7420,"Federal Agency Securities",ASSET,true
+7000,7500,"Investments—Investment Allowance",ASSET,true
+7000,7600,"Prepaid Expenses and Deferred Charges",ASSET,true
+7000,7700,"Fixed Assets",ASSET,true
+7000,7800,"Accrued Income",ASSET,true
+7000,7900,"Other Assets",ASSET,true
+,8000,"Accounts Payable",LIABILITY,true
+8000,8100,"Accounts Payable",LIABILITY,true
+8000,8200,"Interest Payable",LIABILITY,true
+8000,8400,"Taxes Payable",LIABILITY,true
+8000,8500,"Accrued Expenses",LIABILITY,true
+,9000,"Equity",EQUITY,true
+9000,9100,"Member Savings",EQUITY,true
+9000,9300,"Reserves",EQUITY,true
+9000,9400,"Undivided Earnings",EQUITY,true
+9000,9550,"Donated Equity",EQUITY,true
+9000,9560,"Net Income (Loss)",EQUITY,true

@@ -78,6 +78,7 @@ dependencies {
 
             [group: 'io.mifos.customer', name: 'api', version: versions.mifoscustomer],
             [group: 'io.mifos.accounting', name: 'api', version: versions.mifosaccounting],
+            [group: 'io.mifos.accounting', name: 'importer', version: versions.mifosaccounting],
             [group: 'io.mifos.portfolio', name: 'api', version: versions.mifosportfolio],
             [group: 'io.mifos.deposit-account-management', name: 'api', version: versions.mifosdeposit],
 

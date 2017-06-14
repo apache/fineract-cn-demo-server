@@ -18,6 +18,8 @@ package io.mifos.dev;
 import ch.vorburger.mariadb4j.DB;
 import ch.vorburger.mariadb4j.DBConfigurationBuilder;
 import io.mifos.accounting.api.v1.client.LedgerManager;
+import io.mifos.accounting.importer.AccountImporter;
+import io.mifos.accounting.importer.LedgerImporter;
 import io.mifos.anubis.api.v1.domain.AllowedOperation;
 import io.mifos.core.api.config.EnableApiFactory;
 import io.mifos.core.api.context.AutoGuest;
@@ -67,11 +69,15 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.Base64Utils;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
+
+import static io.mifos.accounting.api.v1.EventConstants.POST_ACCOUNT;
+import static io.mifos.accounting.api.v1.EventConstants.POST_LEDGER;
 
 @SuppressWarnings("SpringAutowiredFieldsWarningInspection")
 @RunWith(SpringRunner.class)
@@ -81,6 +87,7 @@ public class ServiceRunner {
   private static final String SCHEDULER_USER_NAME = "imhotep";
   private static final String ADMIN_USER_NAME = "antony";
   private static final String TEST_LOGGER = "test-logger";
+  private static final String LOAN_INCOME_LEDGER = "1100";
 
   private static Microservice<Provisioner> provisionerService;
   private static Microservice<IdentityManager> identityManager;
@@ -285,7 +292,7 @@ public class ServiceRunner {
     }
   }
 
-  private void provisionAppsViaSeshat() throws InterruptedException {
+  private void provisionAppsViaSeshat() throws InterruptedException, IOException {
     final AuthenticationResponse authenticationResponse =
         ServiceRunner.provisionerService.api().authenticate(ServiceRunner.CLIENT_ID, ApiConstants.SYSTEM_SU, "oS/0IiAME/2unkN1momDrhAdNKOhGykYFH/mJN20");
 
@@ -312,13 +319,13 @@ public class ServiceRunner {
       applicationsToCreate.forEach(application -> ServiceRunner.provisionerService.api().createApplication(application));
     }
     for (final Tenant tenant : tenantsToCreate) {
-        try (final AutoSeshat ignored = new AutoSeshat(authenticationResponse.getToken())) {
-          provisionAppsViaSeshatForTenant(tenant);
-        }
+      try (final AutoSeshat ignored = new AutoSeshat(authenticationResponse.getToken())) {
+        provisionAppsViaSeshatForTenant(tenant);
+      }
     }
   }
 
-  private String provisionAppsViaSeshatForTenant(final Tenant tenant) throws InterruptedException {
+  private String provisionAppsViaSeshatForTenant(final Tenant tenant) throws InterruptedException, IOException {
     provisionerService.api().createTenant(tenant);
 
     try (final AutoTenantContext ignored = new AutoTenantContext(tenant.getIdentifier())) {
@@ -387,9 +394,32 @@ public class ServiceRunner {
 
       provisionApp(tenant, depositAccountManager, io.mifos.deposit.api.v1.EventConstants.INITIALIZE);
 
-      createOrgAdminRoleAndUser(tenantAdminPassword.getAdminPassword());
+      final UserWithPassword orgAdminUserPassword = createOrgAdminRoleAndUser(tenantAdminPassword.getAdminPassword());
+
+      createChartOfAccounts(orgAdminUserPassword);
 
       return tenantAdminPassword.getAdminPassword();
+    }
+  }
+
+  private void createChartOfAccounts(final UserWithPassword userWithPassword) throws IOException, InterruptedException {
+    final Authentication authentication;
+    try (final AutoGuest ignored = new AutoGuest()) {
+      authentication = identityManager.api().login(userWithPassword.getIdentifier(), userWithPassword.getPassword());
+    }
+
+    try (final AutoUserContext ignored = new AutoUserContext(userWithPassword.getIdentifier(), authentication.getAccessToken())) {
+      final LedgerImporter ledgerImporter = new LedgerImporter(ledgerManager.api(), logger);
+      final URL ledgersUri = ClassLoader.getSystemResource("ledgers.csv");
+      ledgerImporter.importCSV(ledgersUri);
+      Assert.assertTrue(this.eventRecorder.wait(POST_LEDGER, LOAN_INCOME_LEDGER));
+
+      final AccountImporter accountImporter = new AccountImporter(ledgerManager.api(), logger);
+      final URL accountsUri = ClassLoader.getSystemResource("accounts.csv");
+      accountImporter.importCSV(accountsUri);
+      Assert.assertTrue(this.eventRecorder.wait(POST_ACCOUNT, "9330"));
+
+      identityManager.api().logout();
     }
   }
 
@@ -451,14 +481,14 @@ public class ServiceRunner {
     return role;
   }
 
-  private void createOrgAdminRoleAndUser(final String tenantAdminPassword) throws InterruptedException {
+  private UserWithPassword createOrgAdminRoleAndUser(final String tenantAdminPassword) throws InterruptedException {
     final Authentication adminAuthentication;
     try (final AutoUserContext ignored = new AutoGuest()) {
       adminAuthentication = ServiceRunner.identityManager.api().login(ADMIN_USER_NAME, tenantAdminPassword);
     }
 
     try (final AutoUserContext ignored = new AutoUserContext(ADMIN_USER_NAME, adminAuthentication.getAccessToken())) {
-      final Role fimsAdministratorRole = createOrgAdministratorRole();
+      final Role fimsAdministratorRole = defineOrgAdministratorRole();
 
       ServiceRunner.identityManager.api().createRole(fimsAdministratorRole);
       Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_ROLE, fimsAdministratorRole.getIdentifier()));
@@ -472,10 +502,13 @@ public class ServiceRunner {
       Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_USER, fimsAdministratorUser.getIdentifier()));
 
       ServiceRunner.identityManager.api().logout();
+
+      enableUser(fimsAdministratorUser);
+      return fimsAdministratorUser;
     }
   }
 
-  private Role createOrgAdministratorRole() {
+  private Role defineOrgAdministratorRole() {
     final Permission employeeAllPermission = new Permission();
     employeeAllPermission.setAllowedOperations(AllowedOperation.ALL);
     employeeAllPermission.setPermittableEndpointGroupIdentifier(io.mifos.office.api.v1.PermittableGroupIds.EMPLOYEE_MANAGEMENT);
@@ -496,6 +529,14 @@ public class ServiceRunner {
     selfManagementPermission.setAllowedOperations(AllowedOperation.ALL);
     selfManagementPermission.setPermittableEndpointGroupIdentifier(io.mifos.identity.api.v1.PermittableGroupIds.SELF_MANAGEMENT);
 
+    final Permission ledgerManagementPermission = new Permission();
+    ledgerManagementPermission.setAllowedOperations(AllowedOperation.ALL);
+    ledgerManagementPermission.setPermittableEndpointGroupIdentifier(io.mifos.accounting.api.v1.PermittableGroupIds.THOTH_LEDGER);
+
+    final Permission accountManagementPermission = new Permission();
+    accountManagementPermission.setAllowedOperations(AllowedOperation.ALL);
+    accountManagementPermission.setPermittableEndpointGroupIdentifier(io.mifos.accounting.api.v1.PermittableGroupIds.THOTH_ACCOUNT);
+
     final Role role = new Role();
     role.setIdentifier("orgadmin");
     role.setPermissions(
@@ -504,7 +545,9 @@ public class ServiceRunner {
             officeAllPermission,
             userAllPermission,
             roleAllPermission,
-            selfManagementPermission
+            selfManagementPermission,
+            ledgerManagementPermission,
+            accountManagementPermission
         )
     );
 
