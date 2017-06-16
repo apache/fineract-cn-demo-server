@@ -65,6 +65,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.Base64Utils;
 
@@ -307,12 +308,12 @@ public class ServiceRunner {
     );
 
     final List<Tenant> tenantsToCreate = Arrays.asList(
-        TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "playground", "A place to mess around and have fun", "playground"),
-        TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "demo-cccu", "Demo for CCCU", "demo_cccu"),
-        TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "SKCUKNS1", "St Kitts Cooperative Credit Union", "SKCUKNS1"),
-        TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "PCCUKNS1", "Police Cooperative Credit Union", "PCCUKNS1"),
-        TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "FCCUKNS1", "FND Cooperative Credit Union", "FCCUKNS1"),
-        TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "NCCUKNN1", "Nevis Cooperative Credit Union", "NCCUKNN1")
+        TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "playground", "A place to mess around and have fun", "playground")
+        //TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "demo-cccu", "Demo for CCCU", "demo_cccu"),
+        //TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "SKCUKNS1", "St Kitts Cooperative Credit Union", "SKCUKNS1"),
+        //TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "PCCUKNS1", "Police Cooperative Credit Union", "PCCUKNS1"),
+        //TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "FCCUKNS1", "FND Cooperative Credit Union", "FCCUKNS1"),
+        //TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "NCCUKNN1", "Nevis Cooperative Credit Union", "NCCUKNN1")
     );
 
     try (final AutoSeshat ignored = new AutoSeshat(authenticationResponse.getToken())) {
@@ -410,12 +411,14 @@ public class ServiceRunner {
 
     try (final AutoUserContext ignored = new AutoUserContext(userWithPassword.getIdentifier(), authentication.getAccessToken())) {
       final LedgerImporter ledgerImporter = new LedgerImporter(ledgerManager.api(), logger);
-      final URL ledgersUri = ClassLoader.getSystemResource("ledgers.csv");
+      final ClassPathResource ledgersResource = new ClassPathResource("ledgers.csv");
+      final URL ledgersUri = ledgersResource.getURL();
       ledgerImporter.importCSV(ledgersUri);
       Assert.assertTrue(this.eventRecorder.wait(POST_LEDGER, LOAN_INCOME_LEDGER));
 
       final AccountImporter accountImporter = new AccountImporter(ledgerManager.api(), logger);
-      final URL accountsUri = ClassLoader.getSystemResource("accounts.csv");
+      final ClassPathResource accountsResource = new ClassPathResource("accounts.csv");
+      final URL accountsUri = accountsResource.getURL();
       accountImporter.importCSV(accountsUri);
       Assert.assertTrue(this.eventRecorder.wait(POST_ACCOUNT, "9330"));
 
