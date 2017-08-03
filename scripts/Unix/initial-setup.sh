@@ -124,7 +124,7 @@ chmod +x gradlew
 cd ..
 
 # REM initialize permitted-feign-client
-git clone 'https://github.com'$githubAccount'/permitted-feign-client.git'
+git clone 'https://github.com/'$githubAccount'/permitted-feign-client.git'
 cd permitted-feign-client
 git remote add upstream https://github.com/mifosio/permitted-feign-client.git
 git checkout develop
@@ -215,6 +215,36 @@ cd ..
 git clone 'https://github.com/'$githubAccount'/portfolio.git'
 cd portfolio
 git remote add upstream https://github.com/mifosio/portfolio.git
+git checkout develop
+chmod +x gradlew
+./gradlew publishToMavenLocal
+
+cd ..
+
+# REM initialize deposit
+git clone 'https://github.com/'$githubAccount'/deposit-account-management.git'
+cd deposit-account-management
+git remote add upstream https://github.com/mifosio/deposit-account-management.git
+git checkout develop
+chmod +x gradlew
+./gradlew publishToMavenLocal
+
+cd ..
+
+# REM initialize teller
+git clone 'https://github.com/'$githubAccount'/teller.git'
+cd teller
+git remote add upstream https://github.com/mifosio/teller.git
+git checkout develop
+chmod +x gradlew
+./gradlew publishToMavenLocal
+
+cd ..
+
+# REM initialize reporting
+git clone 'https://github.com/'$githubAccount'/reporting.git'
+cd reporting
+git remote add upstream https://github.com/mifosio/reporting.git
 git checkout develop
 chmod +x gradlew
 ./gradlew publishToMavenLocal
