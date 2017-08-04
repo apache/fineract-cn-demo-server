@@ -188,6 +188,33 @@ git push origin develop
 TIMEOUT /T 5
 cd ..
 
+REM pull deposit-account-management
+cd deposit-account-management
+git checkout develop
+git pull upstream develop
+CALL gradlew publishToMavenLocal
+git push origin develop
+TIMEOUT /T 5
+cd ..
+
+REM pull teller
+cd teller
+git checkout develop
+git pull upstream develop
+CALL gradlew publishToMavenLocal
+git push origin develop
+TIMEOUT /T 5
+cd ..
+
+REM pull reporting
+cd reporting
+git checkout develop
+git pull upstream develop
+CALL gradlew publishToMavenLocal
+git push origin develop
+TIMEOUT /T 5
+cd ..
+
 cd integration-tests
 
 REM pull service-starter
