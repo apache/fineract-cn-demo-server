@@ -228,13 +228,22 @@ chmod +x gradlew
 git push origin develop 
 cd ..
 
+# REM pull default-setup
+cd default-setup
+git checkout develop
+git pull upstream develop
+chmod +x gradlew
+./gradlew publishToMavenLocal
+git push origin develop 
+cd ..
+
 # REM pull demo-server
 cd demo-server
 git checkout develop
 git pull upstream develop
 chmod +x gradlew
 ./gradlew publishToMavenLocal
-git push origin develop 
+git push origin develop
 cd ..
 
 # REM pull test-provisioner-identity-organization

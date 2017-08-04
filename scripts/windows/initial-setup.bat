@@ -242,6 +242,15 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
+REM initialze default-setup
+git clone https://github.com/%githubAccount%/default-setup.git
+cd default-setup
+git remote add upstream https://github.com/mifosio/default-setup.git
+git checkout develop
+CALL gradlew publishToMavenLocal
+TIMEOUT /T 5
+cd ..
+
 REM initialze demo-server
 git clone https://github.com/%githubAccount%/demo-server.git
 cd demo-server

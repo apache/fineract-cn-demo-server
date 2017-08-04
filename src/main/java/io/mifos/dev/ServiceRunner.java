@@ -411,15 +411,13 @@ public class ServiceRunner {
 
     try (final AutoUserContext ignored = new AutoUserContext(userWithPassword.getIdentifier(), authentication.getAccessToken())) {
       final LedgerImporter ledgerImporter = new LedgerImporter(ledgerManager.api(), logger);
-      final ClassPathResource ledgersResource = new ClassPathResource("ledgers.csv");
-      final URL ledgersUri = ledgersResource.getURL();
-      ledgerImporter.importCSV(ledgersUri);
+      final URL ledgersUrl = ClassLoader.getSystemResource("standardChartOfAccounts/ledgers.csv");
+      ledgerImporter.importCSV(ledgersUrl);
       Assert.assertTrue(this.eventRecorder.wait(POST_LEDGER, LOAN_INCOME_LEDGER));
 
       final AccountImporter accountImporter = new AccountImporter(ledgerManager.api(), logger);
-      final ClassPathResource accountsResource = new ClassPathResource("accounts.csv");
-      final URL accountsUri = accountsResource.getURL();
-      accountImporter.importCSV(accountsUri);
+      final URL accountsUrl = ClassLoader.getSystemResource("standardChartOfAccounts/accounts.csv");
+      accountImporter.importCSV(accountsUrl);
       Assert.assertTrue(this.eventRecorder.wait(POST_ACCOUNT, "9330"));
 
       identityManager.api().logout();
