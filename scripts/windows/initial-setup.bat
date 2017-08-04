@@ -203,6 +203,33 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
+REM initialze deposit-account-management
+git clone https://github.com/%githubAccount%/deposit-account-management.git
+cd deposit-account-management
+git remote add upstream https://github.com/mifosio/deposit-account-management.git
+git checkout develop
+CALL gradlew publishToMavenLocal
+TIMEOUT /T 5
+cd ..
+
+REM initialze teller
+git clone https://github.com/%githubAccount%/teller.git
+cd teller
+git remote add upstream https://github.com/mifosio/teller.git
+git checkout develop
+CALL gradlew publishToMavenLocal
+TIMEOUT /T 5
+cd ..
+
+REM initialze reporting
+git clone https://github.com/%githubAccount%/reporting.git
+cd reporting
+git remote add upstream https://github.com/mifosio/reporting.git
+git checkout develop
+CALL gradlew publishToMavenLocal
+TIMEOUT /T 5
+cd ..
+
 mkdir integration-tests
 cd integration-tests
 
