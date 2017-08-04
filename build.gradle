@@ -34,6 +34,7 @@ ext.versions = [
         frameworklang           : '0.1.0-BUILD-SNAPSHOT',
         frameworktest           : '0.1.0-BUILD-SNAPSHOT',
         frameworkanubis         : '0.1.0-BUILD-SNAPSHOT',
+        defaultsetup            : '0.1.0-BUILD-SNAPSHOT',
         validator               : '5.3.0.Final'
 ]
 
@@ -88,6 +89,7 @@ dependencies {
             [group: 'io.mifos.core', name: 'test', version: versions.frameworktest],
             [group: 'io.mifos.core', name: 'lang', version: versions.frameworklang],
             [group: 'io.mifos', name: 'service-starter', version: versions.frameworkservicestarter],
+            [group: 'io.mifos.default-setup', name: 'accounting', version: versions.defaultsetup],
             [group: 'org.springframework.boot', name: 'spring-boot-starter-test'],
             [group: 'org.eclipse.aether', name: 'aether-api', version: '1.1.0'],
             [group: 'org.eclipse.aether', name: 'aether-spi', version: '1.1.0'],

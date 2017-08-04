@@ -226,6 +226,15 @@ git push origin develop
 TIMEOUT /T 5
 cd ..
 
+REM pull default-setup
+cd default-setup
+git checkout develop
+git pull upstream develop
+CALL gradlew publishToMavenLocal
+git push origin develop
+TIMEOUT /T 5
+cd ..
+
 REM pull demo-server
 cd demo-server
 git checkout develop

@@ -264,6 +264,16 @@ chmod +x gradlew
 
 cd ..
 
+# REM initialize default-setup
+git clone 'https://github.com/'$githubAccount'/default-setup.git'
+cd default-setup
+git remote add upstream https://github.com/mifosio/default-setup.git
+git checkout develop
+chmod +x gradlew
+./gradlew publishToMavenLocal
+
+cd ..
+
 # REM initialize demo-server
 git clone 'https://github.com/'$githubAccount'/demo-server.git'
 cd demo-server
