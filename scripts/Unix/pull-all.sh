@@ -190,6 +190,33 @@ chmod +x gradlew
 git push origin develop 
 cd ..
 
+# REM pull deposit-account-management
+cd deposit-account-management
+git checkout develop
+git pull upstream develop
+chmod +x gradlew
+./gradlew publishToMavenLocal
+git push origin develop 
+cd ..
+
+# REM pull teller
+cd teller
+git checkout develop
+git pull upstream develop
+chmod +x gradlew
+./gradlew publishToMavenLocal
+git push origin develop 
+cd ..
+
+# REM pull reporting
+cd reporting
+git checkout develop
+git pull upstream develop
+chmod +x gradlew
+./gradlew publishToMavenLocal
+git push origin develop 
+cd ..
+
 cd integration-tests
 
 # REM pull service-starter
