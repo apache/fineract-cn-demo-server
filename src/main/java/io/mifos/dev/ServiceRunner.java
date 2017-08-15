@@ -65,7 +65,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.Base64Utils;
 
@@ -428,6 +427,7 @@ public class ServiceRunner {
           final Tenant tenant,
           final Microservice<T> service,
           final String initialize_event) throws InterruptedException {
+    logger.info("Provisioning service '{}', for tenant '{}'.", service.name(), tenant.getName());
 
     final AssignedApplication assignedApp = new AssignedApplication();
     assignedApp.setName(service.name());
