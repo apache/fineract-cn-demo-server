@@ -49,8 +49,10 @@ import io.mifos.office.api.v1.client.OrganizationManager;
 import io.mifos.portfolio.api.v1.client.PortfolioManager;
 import io.mifos.provisioner.api.v1.client.Provisioner;
 import io.mifos.provisioner.api.v1.domain.*;
+import io.mifos.reporting.api.v1.client.ReportManager;
 import io.mifos.rhythm.api.v1.client.RhythmManager;
 import io.mifos.rhythm.api.v1.events.BeatEvent;
+import io.mifos.teller.api.v1.client.TellerManager;
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.junit.*;
@@ -97,6 +99,9 @@ public class ServiceRunner {
   private static Microservice<LedgerManager> ledgerManager;
   private static Microservice<PortfolioManager> portfolioManager;
   private static Microservice<DepositAccountManager> depositAccountManager;
+  private static Microservice<TellerManager> tellerManager;
+  private static Microservice<ReportManager> reportManager;
+
 
   private static DB embeddedMariaDb;
 
@@ -208,10 +213,18 @@ public class ServiceRunner {
 
     ServiceRunner.depositAccountManager = new Microservice<>(DepositAccountManager.class, "deposit-account-management", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
     startService(generalProperties, depositAccountManager);
+
+    ServiceRunner.tellerManager = new Microservice<>(TellerManager.class, "teller", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+    startService(generalProperties, ServiceRunner.tellerManager);
+
+    ServiceRunner.reportManager = new Microservice<>(ReportManager.class, "reporting", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+    startService(generalProperties, ServiceRunner.reportManager);
   }
 
   @After
   public void tearDown() throws Exception {
+    ServiceRunner.reportManager.kill();
+    ServiceRunner.tellerManager.kill();
     ServiceRunner.depositAccountManager.kill();
     ServiceRunner.rhythmManager.kill();
     ServiceRunner.portfolioManager.kill();
@@ -245,6 +258,8 @@ public class ServiceRunner {
     System.out.println("Accounting Service: " + ServiceRunner.ledgerManager.getProcessEnvironment().serverURI());
     System.out.println("Portfolio Service: " + ServiceRunner.portfolioManager.getProcessEnvironment().serverURI());
     System.out.println("Deposit Service: " + ServiceRunner.depositAccountManager.getProcessEnvironment().serverURI());
+    System.out.println("Teller Service: " + ServiceRunner.tellerManager.getProcessEnvironment().serverURI());
+    System.out.println("Reporting Service: " + ServiceRunner.reportManager.getProcessEnvironment().serverURI());
 
     boolean run = true;
 
@@ -303,7 +318,9 @@ public class ServiceRunner {
             ApplicationBuilder.create(ServiceRunner.customerManager.name(), ServiceRunner.customerManager.uri()),
             ApplicationBuilder.create(ServiceRunner.ledgerManager.name(), ServiceRunner.ledgerManager.uri()),
             ApplicationBuilder.create(ServiceRunner.portfolioManager.name(), ServiceRunner.portfolioManager.uri()),
-            ApplicationBuilder.create(ServiceRunner.depositAccountManager.name(), ServiceRunner.depositAccountManager.uri())
+            ApplicationBuilder.create(ServiceRunner.depositAccountManager.name(), ServiceRunner.depositAccountManager.uri()),
+            ApplicationBuilder.create(ServiceRunner.tellerManager.name(), ServiceRunner.tellerManager.uri()),
+            ApplicationBuilder.create(ServiceRunner.reportManager.name(), ServiceRunner.reportManager.uri())
     );
 
     final List<Tenant> tenantsToCreate = Arrays.asList(
@@ -362,6 +379,8 @@ public class ServiceRunner {
         Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_PUT_APPLICATION_PERMISSION_USER_ENABLED, new ApplicationPermissionUserEvent(rhythmManager.name(), io.mifos.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT, schedulerUser.getIdentifier())));
       }
 
+      provisionApp(tenant, ServiceRunner.organizationManager, io.mifos.office.api.v1.EventConstants.INITIALIZE);
+
       provisionApp(tenant, ledgerManager, io.mifos.accounting.api.v1.EventConstants.INITIALIZE);
 
       provisionApp(tenant, portfolioManager, io.mifos.portfolio.api.v1.events.EventConstants.INITIALIZE);
@@ -394,6 +413,10 @@ public class ServiceRunner {
 
       provisionApp(tenant, depositAccountManager, io.mifos.deposit.api.v1.EventConstants.INITIALIZE);
 
+      provisionApp(tenant, ServiceRunner.tellerManager, io.mifos.teller.api.v1.EventConstants.INITIALIZE);
+
+      provisionApp(tenant, ServiceRunner.reportManager, io.mifos.reporting.api.v1.EventConstants.INITIALIZE);
+
       final UserWithPassword orgAdminUserPassword = createOrgAdminRoleAndUser(tenantAdminPassword.getAdminPassword());
 
       createChartOfAccounts(orgAdminUserPassword);
@@ -410,12 +433,12 @@ public class ServiceRunner {
 
     try (final AutoUserContext ignored = new AutoUserContext(userWithPassword.getIdentifier(), authentication.getAccessToken())) {
       final LedgerImporter ledgerImporter = new LedgerImporter(ledgerManager.api(), logger);
-      final URL ledgersUrl = ClassLoader.getSystemResource("standardChartOfAccounts/ledgers.csv");
+      final URL ledgersUrl = ServiceRunner.class.getResource("/standardChartOfAccounts/ledgers.csv");
       ledgerImporter.importCSV(ledgersUrl);
       Assert.assertTrue(this.eventRecorder.wait(POST_LEDGER, LOAN_INCOME_LEDGER));
 
       final AccountImporter accountImporter = new AccountImporter(ledgerManager.api(), logger);
-      final URL accountsUrl = ClassLoader.getSystemResource("standardChartOfAccounts/accounts.csv");
+      final URL accountsUrl = ServiceRunner.class.getResource("/standardChartOfAccounts/accounts.csv");
       accountImporter.importCSV(accountsUrl);
       Assert.assertTrue(this.eventRecorder.wait(POST_ACCOUNT, "9330"));
 
