@@ -37,6 +37,7 @@ import io.mifos.core.test.servicestarter.ActiveMQForTest;
 import io.mifos.core.test.servicestarter.EurekaForTest;
 import io.mifos.core.test.servicestarter.IntegrationTestEnvironment;
 import io.mifos.core.test.servicestarter.Microservice;
+import io.mifos.customer.api.v1.CustomerEventConstants;
 import io.mifos.customer.api.v1.client.CustomerManager;
 import io.mifos.deposit.api.v1.client.DepositAccountManager;
 import io.mifos.identity.api.v1.client.IdentityManager;
@@ -410,6 +411,8 @@ public class ServiceRunner {
                 new ApplicationPermissionUserEvent(rhythmManager.name(),
                         io.mifos.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()), schedulerUser.getIdentifier())));
       }
+
+      provisionApp(tenant, ServiceRunner.customerManager, CustomerEventConstants.INITIALIZE);
 
       provisionApp(tenant, depositAccountManager, io.mifos.deposit.api.v1.EventConstants.INITIALIZE);
 
