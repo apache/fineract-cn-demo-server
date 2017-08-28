@@ -21,6 +21,7 @@ import io.mifos.accounting.api.v1.client.LedgerManager;
 import io.mifos.accounting.importer.AccountImporter;
 import io.mifos.accounting.importer.LedgerImporter;
 import io.mifos.anubis.api.v1.domain.AllowedOperation;
+import io.mifos.cheque.api.v1.client.ChequeManager;
 import io.mifos.core.api.config.EnableApiFactory;
 import io.mifos.core.api.context.AutoGuest;
 import io.mifos.core.api.context.AutoSeshat;
@@ -102,6 +103,7 @@ public class ServiceRunner {
   private static Microservice<DepositAccountManager> depositAccountManager;
   private static Microservice<TellerManager> tellerManager;
   private static Microservice<ReportManager> reportManager;
+  private static Microservice<ChequeManager> chequeManager;
 
 
   private static DB embeddedMariaDb;
@@ -209,7 +211,8 @@ public class ServiceRunner {
 
     ServiceRunner.portfolioManager = new Microservice<>(PortfolioManager.class, "portfolio", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT)
             .addProperties(new ExtraProperties() {{
-              setProperty("portfolio.bookInterestAsUser", SCHEDULER_USER_NAME);}});
+              setProperty("portfolio.bookLateFeesAndInterestAsUser", SCHEDULER_USER_NAME);
+            }});
     startService(generalProperties, portfolioManager);
 
     ServiceRunner.depositAccountManager = new Microservice<>(DepositAccountManager.class, "deposit-account-management", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
@@ -220,10 +223,14 @@ public class ServiceRunner {
 
     ServiceRunner.reportManager = new Microservice<>(ReportManager.class, "reporting", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
     startService(generalProperties, ServiceRunner.reportManager);
+
+    ServiceRunner.chequeManager = new Microservice<>(ChequeManager.class, "cheques", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+    startService(generalProperties, ServiceRunner.chequeManager);
   }
 
   @After
   public void tearDown() throws Exception {
+    ServiceRunner.chequeManager.kill();
     ServiceRunner.reportManager.kill();
     ServiceRunner.tellerManager.kill();
     ServiceRunner.depositAccountManager.kill();
@@ -261,6 +268,7 @@ public class ServiceRunner {
     System.out.println("Deposit Service: " + ServiceRunner.depositAccountManager.getProcessEnvironment().serverURI());
     System.out.println("Teller Service: " + ServiceRunner.tellerManager.getProcessEnvironment().serverURI());
     System.out.println("Reporting Service: " + ServiceRunner.reportManager.getProcessEnvironment().serverURI());
+    System.out.println("Cheque Service: " + ServiceRunner.chequeManager.getProcessEnvironment().serverURI());
 
     boolean run = true;
 
@@ -321,7 +329,8 @@ public class ServiceRunner {
             ApplicationBuilder.create(ServiceRunner.portfolioManager.name(), ServiceRunner.portfolioManager.uri()),
             ApplicationBuilder.create(ServiceRunner.depositAccountManager.name(), ServiceRunner.depositAccountManager.uri()),
             ApplicationBuilder.create(ServiceRunner.tellerManager.name(), ServiceRunner.tellerManager.uri()),
-            ApplicationBuilder.create(ServiceRunner.reportManager.name(), ServiceRunner.reportManager.uri())
+            ApplicationBuilder.create(ServiceRunner.reportManager.name(), ServiceRunner.reportManager.uri()),
+            ApplicationBuilder.create(ServiceRunner.chequeManager.name(), ServiceRunner.chequeManager.uri())
     );
 
     final List<Tenant> tenantsToCreate = Arrays.asList(
@@ -419,6 +428,8 @@ public class ServiceRunner {
       provisionApp(tenant, ServiceRunner.tellerManager, io.mifos.teller.api.v1.EventConstants.INITIALIZE);
 
       provisionApp(tenant, ServiceRunner.reportManager, io.mifos.reporting.api.v1.EventConstants.INITIALIZE);
+
+      provisionApp(tenant, ServiceRunner.chequeManager, io.mifos.cheque.api.v1.EventConstants.INITIALIZE);
 
       final UserWithPassword orgAdminUserPassword = createOrgAdminRoleAndUser(tenantAdminPassword.getAdminPassword());
 
