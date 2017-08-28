@@ -203,7 +203,7 @@ public class ServiceRunner {
 
     ServiceRunner.portfolioManager = new Microservice<>(PortfolioManager.class, "portfolio", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT)
             .addProperties(new ExtraProperties() {{
-              setProperty("portfolio.bookInterestAsUser", SCHEDULER_USER_NAME);}});
+              setProperty("portfolio.bookLateFeesAndInterestAsUser", SCHEDULER_USER_NAME);}});
     startService(generalProperties, portfolioManager);
 
     ServiceRunner.depositAccountManager = new Microservice<>(DepositAccountManager.class, "deposit-account-management", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
