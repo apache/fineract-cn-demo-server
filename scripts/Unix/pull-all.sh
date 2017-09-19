@@ -217,6 +217,15 @@ chmod +x gradlew
 git push origin develop 
 cd ..
 
+# REM pull payroll
+cd payroll
+git checkout develop
+git pull upstream develop
+chmod +x gradlew
+./gradlew publishToMavenLocal
+git push origin develop
+cd ..
+
 cd integration-tests
 
 # REM pull service-starter
