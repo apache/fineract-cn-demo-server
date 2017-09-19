@@ -251,6 +251,16 @@ chmod +x gradlew
 
 cd ..
 
+# REM initialize payroll
+git clone 'https://github.com/'$githubAccount'/payroll.git'
+cd payroll
+git remote add upstream https://github.com/mifosio/payroll.git
+git checkout develop
+chmod +x gradlew
+./gradlew publishToMavenLocal
+
+cd ..
+
 mkdir integration-tests
 cd integration-tests
 

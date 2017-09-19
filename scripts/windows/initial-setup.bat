@@ -230,6 +230,15 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
+REM initialze payroll
+git clone https://github.com/%githubAccount%/payroll.git
+cd payroll
+git remote add upstream https://github.com/mifosio/payroll.git
+git checkout develop
+CALL gradlew publishToMavenLocal
+TIMEOUT /T 5
+cd ..
+
 mkdir integration-tests
 cd integration-tests
 
