@@ -6,6 +6,7 @@ exec 5>&1
 mkdir -p core
 cd core
 ERRORS=""
+FAILEDMODULES=""
 get_modules() {
   for module in $@
   do
@@ -15,10 +16,11 @@ get_modules() {
     # For some reason permission is denied
     chmod +x gradlew
     THISBUILD="\nBUILDING $module\n"
-    THISBUILD+=$(./gradlew publishToMavenLocal |& tee >(tail >&5) 
+    THISBUILD+=$(./gradlew publishToMavenLocal |& tee >(cat - >&5) 
     	if [ ${PIPESTATUS[0]} -ne 0 ]; then exit 1; fi )
     if [ $? -ne 0 ]; then 
-        ERRORS+="$THISBUILD\n"
+        ERRORS+="$(echo -e $THISBUILD | tail)\n"
+	FAILEDMODULES+="$module "
     fi
     popd
   done
@@ -37,10 +39,11 @@ cd tools
 git clone https://github.com/JavaMoney/javamoney-lib.git
 cd javamoney-lib
 THISBUILD="\nBUILDING javamoney-lib\n"
-THISBUILD+=$(mvn install -Dmaven.test.skip=true  |& tee >(tail >&5) 
+THISBUILD+=$(mvn install -Dmaven.test.skip=true  |& tee >(cat - >&5) 
    if [ ${PIPESTATUS[0]} -ne 0 ]; then exit 1; fi )
 if [ $? -ne 0 ]; then 
-   ERRORS+="$THISBUILD\n"
+   ERRORS+="$( echo -e $THISBUILD | tail)\n"
+   FAILEDMODULES+="javamoney-lib "
 fi
 
 cd ..
@@ -50,11 +53,12 @@ git clone https://github.com/$githubAccount/crypto.git
 cd crypto
 git remote add upstream https://github.com/mifosio/crypto.git
 chmod +x gradlew
-THISBUILD="\nBUILDING $module\n"
-THISBUILD+=$(./gradlew publishToMavenLocal |& tee >(tail >&5) 
+THISBUILD="\nBUILDING crypto\n"
+THISBUILD+=$(./gradlew publishToMavenLocal |& tee >(cat -  >&5) 
     if [ ${PIPESTATUS[0]} -ne 0 ]; then exit 1; fi )
 if [ $? -ne 0 ]; then 
-    ERRORS+="$THISBUILD\n"
+    ERRORS+="$(echo -e $THISBUILD | tail) \n"
+    FAILEDMODULES+="crypto "
 fi
 
 cd ..
@@ -76,10 +80,11 @@ cd test-accounting-portfolio
 git remote add upstream https://github.com/mifosio/test-accounting-portfolio.git
 chmod +x gradlew
 THISBUILD="\nBUILDING test-accounting-portfolio\n"
-THISBUILD+=$( ./gradlew build |& tee >(tail >&5) 
+THISBUILD+=$( ./gradlew build |& tee >(cat - >&5)
    if [ ${PIPESTATUS[0]} -ne 0 ]; then exit 1; fi )
 if [ $? -ne 0 ]; then 
-   ERRORS+="$THISBUILD\n"
+   ERRORS+="$(echo -e $THISBUILD | tail)\n"
+   FAILEDMODULES+="test-accounting-portfolio "
 fi
 # exit integration-tests directory
 cd ..
@@ -100,4 +105,5 @@ if [ ! -z "$ERRORS" ] ; then
 	echo "********************"
 	echo "Build errors found:"
 	echo "********************"
+	echo "The following modules failed to build: $FAILEDMODULES"
 fi
