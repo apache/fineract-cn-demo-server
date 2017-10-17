@@ -103,7 +103,7 @@ if [ ! -z "$ERRORS" ] ; then
 	echo "********************"
 	echo -e "$ERRORS"
 	echo "********************"
-	echo "Build errors found:"
+	echo "Build errors found"
 	echo "********************"
 	echo "The following modules failed to build: $FAILEDMODULES"
 fi
