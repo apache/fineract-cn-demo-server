@@ -1,20 +1,28 @@
 #!/bin/bash
 githubAccount=$1
 
+exec 5>&1
 # REM create core folder
 mkdir -p core
 cd core
-
+ERRORS=""
+FAILEDMODULES=""
 get_modules() {
   for module in $@
   do
     git clone https://github.com/$githubAccount/$module.git
-    cd $module
+    pushd $module
     git remote add upstream https://github.com/mifosio/$module.git
     # For some reason permission is denied
     chmod +x gradlew
-    ./gradlew publishToMavenLocal
-    cd ..
+    THISBUILD="\nBUILDING $module\n"
+    THISBUILD+=$(./gradlew publishToMavenLocal |& tee >(cat - >&5) 
+    	if [ ${PIPESTATUS[0]} -ne 0 ]; then exit 1; fi )
+    if [ $? -ne 0 ]; then 
+        ERRORS+="$(echo -e $THISBUILD | tail)\n"
+	FAILEDMODULES+="$module "
+    fi
+    popd
   done
 }
 
@@ -30,7 +38,13 @@ cd tools
 # REM initialize javamoney
 git clone https://github.com/JavaMoney/javamoney-lib.git
 cd javamoney-lib
-mvn install -Dmaven.test.skip=true
+THISBUILD="\nBUILDING javamoney-lib\n"
+THISBUILD+=$(mvn install -Dmaven.test.skip=true  |& tee >(cat - >&5) 
+   if [ ${PIPESTATUS[0]} -ne 0 ]; then exit 1; fi )
+if [ $? -ne 0 ]; then 
+   ERRORS+="$( echo -e $THISBUILD | tail)\n"
+   FAILEDMODULES+="javamoney-lib "
+fi
 
 cd ..
 
@@ -39,7 +53,14 @@ git clone https://github.com/$githubAccount/crypto.git
 cd crypto
 git remote add upstream https://github.com/mifosio/crypto.git
 chmod +x gradlew
-./gradlew publishToMavenLocal
+THISBUILD="\nBUILDING crypto\n"
+THISBUILD+=$(./gradlew publishToMavenLocal |& tee >(cat -  >&5) 
+    if [ ${PIPESTATUS[0]} -ne 0 ]; then exit 1; fi )
+if [ $? -ne 0 ]; then 
+    ERRORS+="$(echo -e $THISBUILD | tail) \n"
+    FAILEDMODULES+="crypto "
+fi
+
 cd ..
 
 # exit tools directory
@@ -68,7 +89,13 @@ git clone https://github.com/$githubAccount/test-accounting-portfolio.git
 cd test-accounting-portfolio
 git remote add upstream https://github.com/mifosio/test-accounting-portfolio.git
 chmod +x gradlew
-./gradlew build
+THISBUILD="\nBUILDING test-accounting-portfolio\n"
+THISBUILD+=$( ./gradlew build |& tee >(cat - >&5)
+   if [ ${PIPESTATUS[0]} -ne 0 ]; then exit 1; fi )
+if [ $? -ne 0 ]; then 
+   ERRORS+="$(echo -e $THISBUILD | tail)\n"
+   FAILEDMODULES+="test-accounting-portfolio "
+fi
 # exit integration-tests directory
 cd ..
 
@@ -79,3 +106,14 @@ git remote add upstream https://github.com/mifosio/fims-web-app.git
 npm i
 
 cd ..
+
+if [ ! -z "$ERRORS" ] ; then
+	echo "********************"
+	echo "Build errors found:"
+	echo "********************"
+	echo -e "$ERRORS"
+	echo "********************"
+	echo "Build errors found"
+	echo "********************"
+	echo "The following modules failed to build: $FAILEDMODULES"
+fi
