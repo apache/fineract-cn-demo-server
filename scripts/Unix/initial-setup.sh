@@ -8,7 +8,7 @@ cd core
 ERRORS=""
 FAILEDMODULES=""
 get_modules() {
-  for module in $@
+  for module in "$@"
   do
     git clone https://github.com/$githubAccount/$module.git
     pushd $module
@@ -101,11 +101,11 @@ cd ..
 
 # REM initialize Web App
 git clone https://github.com/$githubAccount/fims-web-app.git
+(
 cd fims-web-app
 git remote add upstream https://github.com/mifosio/fims-web-app.git
 npm i
-
-cd ..
+)
 
 if [ ! -z "$ERRORS" ] ; then
 	echo "********************"
