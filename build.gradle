@@ -17,7 +17,7 @@ plugins {
     id 'com.github.hierynomus.license' version '0.13.1'
 }
 
-group 'io.mifos.dev'
+group 'org.apache.fineract.cn'
 version '0.1.0-BUILD-SNAPSHOT'
 
 ext.versions = [
@@ -75,29 +75,29 @@ dependencies {
     compile(
             [group: 'com.google.code.findbugs', name: 'jsr305'],
             [group: 'org.springframework.cloud', name: 'spring-cloud-starter-eureka-server'],
-            [group: 'io.mifos.office', name: 'api', version: versions.mifosoffice],
-            [group: 'io.mifos.provisioner', name: 'api', version: versions.mifosprovisioner],
-            [group: 'io.mifos.identity', name: 'api', version: versions.mifosidentity],
-            [group: 'io.mifos.rhythm', name: 'api', version: versions.mifosrhythm],
-            [group: 'io.mifos.rhythm', name: 'spi', version: versions.mifosrhythm],
+            [group: 'org.apache.fineract.cn.office', name: 'api', version: versions.mifosoffice],
+            [group: 'org.apache.fineract.cn.provisioner', name: 'api', version: versions.mifosprovisioner],
+            [group: 'org.apache.fineract.cn.identity', name: 'api', version: versions.mifosidentity],
+            [group: 'org.apache.fineract.cn.rhythm', name: 'api', version: versions.mifosrhythm],
+            [group: 'org.apache.fineract.cn.rhythm', name: 'spi', version: versions.mifosrhythm],
 
-            [group: 'io.mifos.customer', name: 'api', version: versions.mifoscustomer],
-            [group: 'io.mifos.accounting', name: 'api', version: versions.mifosaccounting],
-            [group: 'io.mifos.accounting', name: 'importer', version: versions.mifosaccounting],
-            [group: 'io.mifos.portfolio', name: 'api', version: versions.mifosportfolio],
-            [group: 'io.mifos.deposit-account-management', name: 'api', version: versions.mifosdeposit],
-            [group: 'io.mifos.teller', name: 'api', version: versions.mifosteller],
-            [group: 'io.mifos.reporting', name: 'api', version: versions.mifosreporting],
-            [group: 'io.mifos.cheques', name: 'api', version: versions.kuelapcheques],
-            [group: 'io.mifos.payroll', name: 'api', version: versions.mifospayroll],
+            [group: 'org.apache.fineract.cn.customer', name: 'api', version: versions.mifoscustomer],
+            [group: 'org.apache.fineract.cn.accounting', name: 'api', version: versions.mifosaccounting],
+            [group: 'org.apache.fineract.cn.accounting', name: 'importer', version: versions.mifosaccounting],
+            [group: 'org.apache.fineract.cn.portfolio', name: 'api', version: versions.mifosportfolio],
+            [group: 'org.apache.fineract.cn.deposit-account-management', name: 'api', version: versions.mifosdeposit],
+            [group: 'org.apache.fineract.cn.teller', name: 'api', version: versions.mifosteller],
+            [group: 'org.apache.fineract.cn.reporting', name: 'api', version: versions.mifosreporting],
+            [group: 'org.apache.fineract.cn.cheques', name: 'api', version: versions.kuelapcheques],
+            [group: 'org.apache.fineract.cn.payroll', name: 'api', version: versions.mifospayroll],
 
-            [group: 'io.mifos.anubis', name: 'api', version: versions.frameworkanubis],
-            [group: 'io.mifos.anubis', name: 'test', version: versions.frameworkanubis],
-            [group: 'io.mifos.core', name: 'api', version: versions.frameworkapi],
-            [group: 'io.mifos.core', name: 'test', version: versions.frameworktest],
-            [group: 'io.mifos.core', name: 'lang', version: versions.frameworklang],
-            [group: 'io.mifos', name: 'service-starter', version: versions.frameworkservicestarter],
-            [group: 'io.mifos.default-setup', name: 'accounting', version: versions.defaultsetup],
+            [group: 'org.apache.fineract.cn.anubis', name: 'api', version: versions.frameworkanubis],
+            [group: 'org.apache.fineract.cn.anubis', name: 'test', version: versions.frameworkanubis],
+            [group: 'org.apache.fineract.cn', name: 'api', version: versions.frameworkapi],
+            [group: 'org.apache.fineract.cn', name: 'test', version: versions.frameworktest],
+            [group: 'org.apache.fineract.cn', name: 'lang', version: versions.frameworklang],
+            [group: 'org.apache.fineract.cn', name: 'service-starter', version: versions.frameworkservicestarter],
+            [group: 'org.apache.fineract.cn.default-setup', name: 'accounting', version: versions.defaultsetup],
             [group: 'org.springframework.boot', name: 'spring-boot-starter-test'],
             [group: 'org.eclipse.aether', name: 'aether-api', version: '1.1.0'],
             [group: 'org.eclipse.aether', name: 'aether-spi', version: '1.1.0'],
