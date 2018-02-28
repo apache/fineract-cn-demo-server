@@ -1,32 +1,25 @@
 #!/bin/bash
+#Ensure that you have forked Fineract CN repositories from your githubAccount
 githubAccount=$1
 
-exec 5>&1
 # REM create core folder
 mkdir -p core
 cd core
-ERRORS=""
-FAILEDMODULES=""
+
 get_modules() {
-  for module in "$@"
+  for module in $@
   do
     git clone https://github.com/$githubAccount/$module.git
-    pushd $module
-    git remote add upstream https://github.com/mifosio/$module.git
-    # For some reason permission is denied
+    cd $module
+    git remote add upstream https://github.com/apache/$module.git
+    # For some reason permission gets denied
     chmod +x gradlew
-    THISBUILD="\nBUILDING $module\n"
-    THISBUILD+=$(./gradlew publishToMavenLocal |& tee >(cat - >&5) 
-    	if [ ${PIPESTATUS[0]} -ne 0 ]; then exit 1; fi )
-    if [ $? -ne 0 ]; then 
-        ERRORS+="$(echo -e $THISBUILD | tail)\n"
-	FAILEDMODULES+="$module "
-    fi
-    popd
+    ./gradlew publishToMavenLocal
+    cd ..
   done
 }
 
-get_modules lang async cassandra mariadb data-jpa 'command' api 'test'
+get_modules fineract-cn-lang fineract-cn-async fineract-cn-cassandra fineract-cn-mariadb fineract-cn-data-jpa fineract-cn-command fineract-cn-api fineract-cn-test
 
 # Return to start folder
 cd ..
@@ -38,82 +31,32 @@ cd tools
 # REM initialize javamoney
 git clone https://github.com/JavaMoney/javamoney-lib.git
 cd javamoney-lib
-THISBUILD="\nBUILDING javamoney-lib\n"
-THISBUILD+=$(mvn install -Dmaven.test.skip=true  |& tee >(cat - >&5) 
-   if [ ${PIPESTATUS[0]} -ne 0 ]; then exit 1; fi )
-if [ $? -ne 0 ]; then 
-   ERRORS+="$( echo -e $THISBUILD | tail)\n"
-   FAILEDMODULES+="javamoney-lib "
-fi
+mvn install -Dmaven.test.skip=true
 
 cd ..
 
-# REM initialize crypto
-git clone https://github.com/$githubAccount/crypto.git
-cd crypto
-git remote add upstream https://github.com/mifosio/crypto.git
+# REM initialize fineract-cn-crypto
+git clone https://github.com/$githubAccount/fineract-cn-crypto.git
+cd fineract-cn-crypto
+git remote add upstream https://github.com/apache/fineract-cn-crypto.git
 chmod +x gradlew
-THISBUILD="\nBUILDING crypto\n"
-THISBUILD+=$(./gradlew publishToMavenLocal |& tee >(cat -  >&5) 
-    if [ ${PIPESTATUS[0]} -ne 0 ]; then exit 1; fi )
-if [ $? -ne 0 ]; then 
-    ERRORS+="$(echo -e $THISBUILD | tail) \n"
-    FAILEDMODULES+="crypto "
-fi
-
+./gradlew publishToMavenLocal
 cd ..
 
 # exit tools directory
 cd ..
 
-
-get_modules anubis permitted-feign-client provisioner identity rhythm template office customer group accounting portfolio deposit-account-management teller reporting
-
-# REM initialize payroll
-git clone 'https://github.com/'$githubAccount'/payroll.git'
-cd payroll
-git remote add upstream https://github.com/mifosio/payroll.git
-git checkout develop
-chmod +x gradlew
-./gradlew publishToMavenLocal
-
-cd ..
+get_modules fineract-cn-anubis fineract-cn-identity fineract-cn-permitted-feign-client fineract-cn-provisioner fineract-cn-rhythm fineract-cn-template fineract-cn-office fineract-cn-customer fineract-cn-group fineract-cn-accounting fineract-cn-portfolio fineract-cn-deposit-account-management fineract-cn-cheques fineract-cn-payroll fineract-cn-teller fineract-cn-reporting
 
 mkdir integration-tests
 cd integration-tests
 
-get_modules service-starter default-setup demo-server test-provisioner-identity-organization
-
-# test-accounting-portfolio is built a little different so it's done separate from the others
-git clone https://github.com/$githubAccount/test-accounting-portfolio.git
-cd test-accounting-portfolio
-git remote add upstream https://github.com/mifosio/test-accounting-portfolio.git
-chmod +x gradlew
-THISBUILD="\nBUILDING test-accounting-portfolio\n"
-THISBUILD+=$( ./gradlew build |& tee >(cat - >&5)
-   if [ ${PIPESTATUS[0]} -ne 0 ]; then exit 1; fi )
-if [ $? -ne 0 ]; then 
-   ERRORS+="$(echo -e $THISBUILD | tail)\n"
-   FAILEDMODULES+="test-accounting-portfolio "
-fi
-# exit integration-tests directory
-cd ..
+get_modules fineract-cn-service-starter fineract-cn-default-setup fineract-cn-demo-server
 
 # REM initialize Web App
-git clone https://github.com/$githubAccount/fims-web-app.git
-(
+git clone https://github.com/$githubAccount/fineract-cn-fims-web-app.git
 cd fims-web-app
-git remote add upstream https://github.com/mifosio/fims-web-app.git
+git remote add upstream https://github.com/apache/fineract-cn-fims-web-app.git
 npm i
-)
 
-if [ ! -z "$ERRORS" ] ; then
-	echo "********************"
-	echo "Build errors found:"
-	echo "********************"
-	echo -e "$ERRORS"
-	echo "********************"
-	echo "Build errors found"
-	echo "********************"
-	echo "The following modules failed to build: $FAILEDMODULES"
-fi
+cd ..
