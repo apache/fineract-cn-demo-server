@@ -1,0 +1,11 @@
+version: '2.0'
+services:
+  activemq:
+    image: rmohr/activemq:5.14.5
+    ports:
+      - "61616:61616"
+      - "8161:8161"
+  eureka:
+    image: springcloud/eureka
+    ports:
+      - "8761:8761"

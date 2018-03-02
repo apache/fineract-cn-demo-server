@@ -8,12 +8,22 @@ All Apache Fineract CN projects must be published to your local Maven repository
 ### IDE
 Just start the class DemoServer
 
+### Pre-quisites
+1. Install Docker v1.12+ and docker-compose v1.10 as per documentation in docker.com
+
 ### Executable JAR file
 1. Open a terminal window
 2. Change directory to your project location
 3. Run `gradlew publishToMavenLocal`
-4. Change directory to build/libs
-5. Run `java -jar demo-server-0.1.0-BUILD-SNAPSHOT.jar`
+4. Run `./start-dependencies.sh` to start Eureka and ActiveMQ
+5. Change directory to build/libs
+6. Run `java -jar demo-server-0.1.0-BUILD-SNAPSHOT.jar`
+
+Note:
+a) To view Eureka console, navigate to http://localhost:8761
+b) To view ActiveMQ admin console queues page, navigate to http://localhost:8161/admin/queues.jsp and use admin/admin as user id and password
+c) To shutdown Eureka and ActiveMQ, run `./stop-dependencies.sh`
+d) To launch built in Eureka and ActiveMQ, Run `java -jar -Dstart.infrastructure=true demo-server-0.1.0-BUILD-SNAPSHOT.jar`
 
 #### Supported Environment Variables
 

@@ -133,11 +133,9 @@ public class ServiceRunner {
     }
   }
 
-  @ClassRule
-  public static final EurekaForTest EUREKA_FOR_TEST = new EurekaForTest();
+  public static EurekaForTest EUREKA_FOR_TEST;
 
-  @ClassRule
-  public static final ActiveMQForTest ACTIVE_MQ_FOR_TEST = new ActiveMQForTest();
+  public static ActiveMQForTest ACTIVE_MQ_FOR_TEST;
 
   @ClassRule
   public static final IntegrationTestEnvironment INTEGRATION_TEST_ENVIRONMENT = new IntegrationTestEnvironment("fineract-demo");
@@ -168,6 +166,12 @@ public class ServiceRunner {
   @Before
   public void before() throws Exception
   {
+	if (this.environment.containsProperty("start.infrastructure"))
+	{
+		EUREKA_FOR_TEST = new EurekaForTest();
+		ACTIVE_MQ_FOR_TEST = new ActiveMQForTest();
+	}
+	  
     this.isPersistent = this.environment.containsProperty("demoserver.persistent");
     this.shouldProvision = this.environment.containsProperty("demoserver.provision");
 
