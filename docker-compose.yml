@@ -9,3 +9,23 @@ services:
     image: springcloud/eureka
     ports:
       - "8761:8761"
+    environment:
+      - server_port=8761
+      - security_basic_enabled=false
+      - error_whitelabel_enabled=false
+      - eureka_instance_leaseRenewalIntervalInSeconds=1
+      - eureka_server_responseCacheUpdateIntervalMs=500
+      - eureka_instance_hostname=localhost
+      - eureka_client_registerWithEureka=false
+      - eureka_client_fetchRegistry=false
+      - eureka_serviceUrl_defaultZone=http://localhost:8761/eureka
+  cassandra:
+    image: cassandra:3.0.16
+    ports:
+      - "9142:9042"
+  mariadb:
+    image: mariadb:10.2
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=mysql
