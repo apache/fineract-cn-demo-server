@@ -133,8 +133,10 @@ public class ServiceRunner {
     }
   }
 
+  @ClassRule
   public static EurekaForTest EUREKA_FOR_TEST;
 
+  @ClassRule
   public static ActiveMQForTest ACTIVE_MQ_FOR_TEST;
 
   @ClassRule
@@ -166,7 +168,7 @@ public class ServiceRunner {
   @Before
   public void before() throws Exception
   {
-	if (this.environment.containsProperty("start.infrastructure"))
+	if (!this.environment.containsProperty("external.infrastructure"))
 	{
 		EUREKA_FOR_TEST = new EurekaForTest();
 		ACTIVE_MQ_FOR_TEST = new ActiveMQForTest();
