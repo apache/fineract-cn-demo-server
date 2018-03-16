@@ -1,8 +1,8 @@
-# Mifos I/O Demo Server
+# Apache Fineract CN Demo Server
 Simple environment used for demo purposes
 
 ## Preconditions
-All Mifos I/O projects must be published to your local Maven repository
+All Apache Fineract CN projects must be published to your local Maven repository
 
 ## Run
 ### IDE
