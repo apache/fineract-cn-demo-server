@@ -19,7 +19,7 @@ get_modules() {
   done
 }
 
-get_modules fineract-cn-lang fineract-cn-async fineract-cn-cassandra fineract-cn-mariadb fineract-cn-data-jpa fineract-cn-command fineract-cn-api fineract-cn-test
+get_modules fineract-cn-lang fineract-cn-api fineract-cn-async fineract-cn-cassandra fineract-cn-mariadb fineract-cn-data-jpa fineract-cn-command fineract-cn-test
 
 # Return to start folder
 cd ..
@@ -55,7 +55,7 @@ get_modules fineract-cn-service-starter fineract-cn-default-setup fineract-cn-de
 
 # REM initialize Web App
 git clone https://github.com/$githubAccount/fineract-cn-fims-web-app.git
-cd fims-web-app
+cd fineract-cn-fims-web-app
 git remote add upstream https://github.com/apache/fineract-cn-fims-web-app.git
 npm i
 
