@@ -212,6 +212,15 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
+REM initialze cheques
+git clone https://github.com/%githubAccount%/cheques.git
+cd cheques
+git remote add upstream https://github.com/mifosio/cheques.git
+git checkout develop
+CALL gradlew publishToMavenLocal
+TIMEOUT /T 5
+cd ..
+
 REM initialze teller
 git clone https://github.com/%githubAccount%/teller.git
 cd teller
