@@ -44,6 +44,7 @@ import io.mifos.core.test.servicestarter.Microservice;
 import io.mifos.customer.api.v1.CustomerEventConstants;
 import io.mifos.customer.api.v1.client.CustomerManager;
 import io.mifos.deposit.api.v1.client.DepositAccountManager;
+import io.mifos.group.api.v1.client.GroupManager;
 import io.mifos.identity.api.v1.client.IdentityManager;
 import io.mifos.identity.api.v1.domain.*;
 import io.mifos.identity.api.v1.events.ApplicationPermissionEvent;
@@ -109,6 +110,7 @@ public class ServiceRunner {
   private static Microservice<ReportManager> reportManager;
   private static Microservice<ChequeManager> chequeManager;
   private static Microservice<PayrollManager> payrollManager;
+  private static Microservice<GroupManager> groupManager;
 
 
   private static DB embeddedMariaDb;
@@ -174,9 +176,9 @@ public class ServiceRunner {
       EmbeddedCassandraServerHelper.startEmbeddedCassandra(TimeUnit.SECONDS.toMillis(30L));
       // start embedded MariaDB
       ServiceRunner.embeddedMariaDb = DB.newEmbeddedDB(
-          DBConfigurationBuilder.newBuilder()
-              .setPort(3306)
-              .build()
+              DBConfigurationBuilder.newBuilder()
+                      .setPort(3306)
+                      .build()
       );
       ServiceRunner.embeddedMariaDb.start();
     }
@@ -234,10 +236,14 @@ public class ServiceRunner {
 
     ServiceRunner.payrollManager = new Microservice<>(PayrollManager.class, "payroll", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
     startService(generalProperties, ServiceRunner.payrollManager);
+
+    ServiceRunner.groupManager = new Microservice<>(GroupManager.class, "group", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+    startService(generalProperties, ServiceRunner.groupManager);
   }
 
   @After
   public void tearDown() throws Exception {
+    ServiceRunner.groupManager.kill();
     ServiceRunner.payrollManager.kill();
     ServiceRunner.chequeManager.kill();
     ServiceRunner.reportManager.kill();
@@ -279,6 +285,7 @@ public class ServiceRunner {
     System.out.println("Reporting Service: " + ServiceRunner.reportManager.getProcessEnvironment().serverURI());
     System.out.println("Cheque Service: " + ServiceRunner.chequeManager.getProcessEnvironment().serverURI());
     System.out.println("Payroll Service: " + ServiceRunner.payrollManager.getProcessEnvironment().serverURI());
+    System.out.println("Group Service: " + ServiceRunner.groupManager.getProcessEnvironment().serverURI());
 
     boolean run = true;
 
@@ -304,7 +311,7 @@ public class ServiceRunner {
 
   private void migrateServices() {
     final AuthenticationResponse authenticationResponse =
-        ServiceRunner.provisionerService.api().authenticate(ServiceRunner.CLIENT_ID, ApiConstants.SYSTEM_SU, "oS/0IiAME/2unkN1momDrhAdNKOhGykYFH/mJN20");
+            ServiceRunner.provisionerService.api().authenticate(ServiceRunner.CLIENT_ID, ApiConstants.SYSTEM_SU, "oS/0IiAME/2unkN1momDrhAdNKOhGykYFH/mJN20");
 
     try (final AutoSeshat ignored = new AutoSeshat(authenticationResponse.getToken())) {
       final List<Tenant> tenants = ServiceRunner.provisionerService.api().getTenants();
@@ -328,7 +335,7 @@ public class ServiceRunner {
 
   private void provisionAppsViaSeshat() throws InterruptedException, IOException {
     final AuthenticationResponse authenticationResponse =
-        ServiceRunner.provisionerService.api().authenticate(ServiceRunner.CLIENT_ID, ApiConstants.SYSTEM_SU, "oS/0IiAME/2unkN1momDrhAdNKOhGykYFH/mJN20");
+            ServiceRunner.provisionerService.api().authenticate(ServiceRunner.CLIENT_ID, ApiConstants.SYSTEM_SU, "oS/0IiAME/2unkN1momDrhAdNKOhGykYFH/mJN20");
 
     final List<Application> applicationsToCreate = Arrays.asList(
             ApplicationBuilder.create(ServiceRunner.identityManager.name(), ServiceRunner.identityManager.uri()),
@@ -341,16 +348,18 @@ public class ServiceRunner {
             ApplicationBuilder.create(ServiceRunner.tellerManager.name(), ServiceRunner.tellerManager.uri()),
             ApplicationBuilder.create(ServiceRunner.reportManager.name(), ServiceRunner.reportManager.uri()),
             ApplicationBuilder.create(ServiceRunner.chequeManager.name(), ServiceRunner.chequeManager.uri()),
-            ApplicationBuilder.create(ServiceRunner.payrollManager.name(), ServiceRunner.payrollManager.uri())
+            ApplicationBuilder.create(ServiceRunner.payrollManager.name(), ServiceRunner.payrollManager.uri()),
+            ApplicationBuilder.create(ServiceRunner.groupManager.name(), ServiceRunner.groupManager.uri())
     );
 
+
     final List<Tenant> tenantsToCreate = Arrays.asList(
-        TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "playground", "A place to mess around and have fun", "playground")
-        //TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "demo-cccu", "Demo for CCCU", "demo_cccu"),
-        //TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "SKCUKNS1", "St Kitts Cooperative Credit Union", "SKCUKNS1"),
-        //TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "PCCUKNS1", "Police Cooperative Credit Union", "PCCUKNS1"),
-        //TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "FCCUKNS1", "FND Cooperative Credit Union", "FCCUKNS1"),
-        //TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "NCCUKNN1", "Nevis Cooperative Credit Union", "NCCUKNN1")
+            TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "playground", "A place to mess around and have fun", "playground")
+            //TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "demo-cccu", "Demo for CCCU", "demo_cccu"),
+            //TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "SKCUKNS1", "St Kitts Cooperative Credit Union", "SKCUKNS1"),
+            //TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "PCCUKNS1", "Police Cooperative Credit Union", "PCCUKNS1"),
+            //TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "FCCUKNS1", "FND Cooperative Credit Union", "FCCUKNS1"),
+            //TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "NCCUKNN1", "Nevis Cooperative Credit Union", "NCCUKNN1")
     );
 
     try (final AutoSeshat ignored = new AutoSeshat(authenticationResponse.getToken())) {
@@ -443,6 +452,8 @@ public class ServiceRunner {
       provisionApp(tenant, ServiceRunner.chequeManager, io.mifos.cheque.api.v1.EventConstants.INITIALIZE);
 
       provisionApp(tenant, ServiceRunner.payrollManager, io.mifos.payroll.api.v1.EventConstants.INITIALIZE);
+
+      provisionApp(tenant, ServiceRunner.groupManager, io.mifos.group.api.v1.EventConstants.INITIALIZE);
 
       final UserWithPassword orgAdminUserPassword = createOrgAdminRoleAndUser(tenantAdminPassword.getAdminPassword());
 
@@ -591,15 +602,15 @@ public class ServiceRunner {
     final Role role = new Role();
     role.setIdentifier("orgadmin");
     role.setPermissions(
-        Arrays.asList(
-            employeeAllPermission,
-            officeAllPermission,
-            userAllPermission,
-            roleAllPermission,
-            selfManagementPermission,
-            ledgerManagementPermission,
-            accountManagementPermission
-        )
+            Arrays.asList(
+                    employeeAllPermission,
+                    officeAllPermission,
+                    userAllPermission,
+                    roleAllPermission,
+                    selfManagementPermission,
+                    ledgerManagementPermission,
+                    accountManagementPermission
+            )
     );
 
     return role;
