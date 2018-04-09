@@ -34,6 +34,7 @@ ext.versions = [
         mifosreporting          : '0.1.0-BUILD-SNAPSHOT',
         kuelapcheques           : '0.1.0-BUILD-SNAPSHOT',
         mifospayroll            : '0.1.0-BUILD-SNAPSHOT',
+        mifosgroup              : '0.1.0-BUILD-SNAPSHOT',
         frameworkapi            : '0.1.0-BUILD-SNAPSHOT',
         frameworklang           : '0.1.0-BUILD-SNAPSHOT',
         frameworktest           : '0.1.0-BUILD-SNAPSHOT',
@@ -90,6 +91,7 @@ dependencies {
             [group: 'org.apache.fineract.cn.reporting', name: 'api', version: versions.mifosreporting],
             [group: 'org.apache.fineract.cn.cheques', name: 'api', version: versions.kuelapcheques],
             [group: 'org.apache.fineract.cn.payroll', name: 'api', version: versions.mifospayroll],
+            [group: 'org.apache.fineract.cn.group', name: 'api', version: versions.mifosgroup],
 
             [group: 'org.apache.fineract.cn.anubis', name: 'api', version: versions.frameworkanubis],
             [group: 'org.apache.fineract.cn.anubis', name: 'test', version: versions.frameworkanubis],
