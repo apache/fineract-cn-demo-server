@@ -28,7 +28,7 @@ cd core
 get_modules() {
   for module in $@
   do
-    git clone https://github.com/$githubAccount/$module.git
+    git clone https://github.com/ark1/$module.git
     cd $module
     git remote add upstream https://github.com/apache/$module.git
     # For some reason permission gets denied
@@ -55,7 +55,7 @@ mvn install -Dmaven.test.skip=true
 cd ..
 
 # REM initialize fineract-cn-crypto
-git clone https://github.com/$githubAccount/fineract-cn-crypto.git
+git clone https://github.com/ark1/fineract-cn-crypto.git
 cd fineract-cn-crypto
 git remote add upstream https://github.com/apache/fineract-cn-crypto.git
 chmod +x gradlew
@@ -73,7 +73,7 @@ cd integration-tests
 get_modules fineract-cn-service-starter fineract-cn-default-setup fineract-cn-demo-server
 
 # REM initialize Web App
-git clone https://github.com/$githubAccount/fineract-cn-fims-web-app.git
+git clone https://github.com/ark1/fineract-cn-fims-web-app.git
 cd fineract-cn-fims-web-app
 git remote add upstream https://github.com/apache/fineract-cn-fims-web-app.git
 npm i
