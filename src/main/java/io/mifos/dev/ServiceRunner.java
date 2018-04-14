@@ -63,6 +63,8 @@ import io.mifos.teller.api.v1.client.TellerManager;
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.junit.*;
+import org.junit.rules.ExternalResource;
+import org.junit.rules.RunExternalResourceConditionally;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,7 +113,8 @@ public class ServiceRunner {
   private static Microservice<ChequeManager> chequeManager;
   private static Microservice<PayrollManager> payrollManager;
   private static Microservice<GroupManager> groupManager;
-
+  
+  private static Boolean runEmbeddedResources = (System.getProperty("external.infrastructure") == null ? true : false);
 
   private static DB embeddedMariaDb;
 
@@ -134,11 +137,14 @@ public class ServiceRunner {
   }
 
   @ClassRule
-  public static EurekaForTest EUREKA_FOR_TEST;
+  public static final ExternalResource EUREKA_FOR_TEST = new RunExternalResourceConditionally (
+                                                                new EurekaForTest(), 
+                                                                runEmbeddedResources);
 
   @ClassRule
-  public static ActiveMQForTest ACTIVE_MQ_FOR_TEST;
-
+  public static final ExternalResource ACTIVE_MQ_FOR_TEST = new RunExternalResourceConditionally (
+                                                                new ActiveMQForTest(), 
+                                                                runEmbeddedResources);
   @ClassRule
   public static final IntegrationTestEnvironment INTEGRATION_TEST_ENVIRONMENT = new IntegrationTestEnvironment("fineract-demo");
 
@@ -168,12 +174,6 @@ public class ServiceRunner {
   @Before
   public void before() throws Exception
   {
-	if (!this.environment.containsProperty("external.infrastructure"))
-	{
-		EUREKA_FOR_TEST = new EurekaForTest();
-		ACTIVE_MQ_FOR_TEST = new ActiveMQForTest();
-	}
-	  
     this.isPersistent = this.environment.containsProperty("demoserver.persistent");
     this.shouldProvision = this.environment.containsProperty("demoserver.provision");
 
