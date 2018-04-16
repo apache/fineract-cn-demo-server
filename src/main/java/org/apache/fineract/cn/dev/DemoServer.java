@@ -16,21 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.mifos.dev;
+package org.apache.fineract.cn.dev;
 
-import io.mifos.provisioner.api.v1.domain.Application;
+import org.junit.runner.JUnitCore;
 
-class ApplicationBuilder {
+public class DemoServer {
 
-  private ApplicationBuilder() {
+  public DemoServer() {
     super();
   }
 
-  static Application create(final String name, final String uri) {
-    final Application application = new Application();
-    application.setName(name);
-    application.setHomepage(uri);
-    application.setVendor("Apache Fineract");
-    return application;
+  public static void main(String[] args) {
+    JUnitCore.main("org.apache.fineract.cn.dev.ServiceRunner");
   }
 }

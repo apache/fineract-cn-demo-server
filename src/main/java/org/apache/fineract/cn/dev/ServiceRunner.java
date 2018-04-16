@@ -16,50 +16,50 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.mifos.dev;
+package org.apache.fineract.cn.dev;
 
 import ch.vorburger.mariadb4j.DB;
 import ch.vorburger.mariadb4j.DBConfigurationBuilder;
-import io.mifos.accounting.api.v1.client.LedgerManager;
-import io.mifos.accounting.importer.AccountImporter;
-import io.mifos.accounting.importer.LedgerImporter;
-import io.mifos.anubis.api.v1.domain.AllowedOperation;
-import io.mifos.cheque.api.v1.client.ChequeManager;
-import io.mifos.core.api.config.EnableApiFactory;
-import io.mifos.core.api.context.AutoGuest;
-import io.mifos.core.api.context.AutoSeshat;
-import io.mifos.core.api.context.AutoUserContext;
-import io.mifos.core.api.util.ApiConstants;
-import io.mifos.core.api.util.ApiFactory;
-import io.mifos.core.cassandra.util.CassandraConnectorConstants;
-import io.mifos.core.lang.AutoTenantContext;
-import io.mifos.core.mariadb.util.MariaDBConstants;
-import io.mifos.core.test.env.ExtraProperties;
-import io.mifos.core.test.listener.EnableEventRecording;
-import io.mifos.core.test.listener.EventRecorder;
-import io.mifos.core.test.servicestarter.ActiveMQForTest;
-import io.mifos.core.test.servicestarter.EurekaForTest;
-import io.mifos.core.test.servicestarter.IntegrationTestEnvironment;
-import io.mifos.core.test.servicestarter.Microservice;
-import io.mifos.customer.api.v1.CustomerEventConstants;
-import io.mifos.customer.api.v1.client.CustomerManager;
-import io.mifos.deposit.api.v1.client.DepositAccountManager;
-import io.mifos.group.api.v1.client.GroupManager;
-import io.mifos.identity.api.v1.client.IdentityManager;
-import io.mifos.identity.api.v1.domain.*;
-import io.mifos.identity.api.v1.events.ApplicationPermissionEvent;
-import io.mifos.identity.api.v1.events.ApplicationPermissionUserEvent;
-import io.mifos.identity.api.v1.events.ApplicationSignatureEvent;
-import io.mifos.identity.api.v1.events.EventConstants;
-import io.mifos.office.api.v1.client.OrganizationManager;
-import io.mifos.payroll.api.v1.client.PayrollManager;
-import io.mifos.portfolio.api.v1.client.PortfolioManager;
-import io.mifos.provisioner.api.v1.client.Provisioner;
-import io.mifos.provisioner.api.v1.domain.*;
-import io.mifos.reporting.api.v1.client.ReportManager;
-import io.mifos.rhythm.api.v1.client.RhythmManager;
-import io.mifos.rhythm.api.v1.events.BeatEvent;
-import io.mifos.teller.api.v1.client.TellerManager;
+import org.apache.fineract.cn.accounting.api.v1.client.LedgerManager;
+import org.apache.fineract.cn.accounting.importer.AccountImporter;
+import org.apache.fineract.cn.accounting.importer.LedgerImporter;
+import org.apache.fineract.cn.anubis.api.v1.domain.AllowedOperation;
+import org.apache.fineract.cn.cheque.api.v1.client.ChequeManager;
+import org.apache.fineract.cn.cassandra.util.CassandraConnectorConstants;
+import org.apache.fineract.cn.mariadb.util.MariaDBConstants;
+import org.apache.fineract.cn.test.env.ExtraProperties;
+import org.apache.fineract.cn.test.listener.EnableEventRecording;
+import org.apache.fineract.cn.test.listener.EventRecorder;
+import org.apache.fineract.cn.test.servicestarter.ActiveMQForTest;
+import org.apache.fineract.cn.test.servicestarter.EurekaForTest;
+import org.apache.fineract.cn.test.servicestarter.IntegrationTestEnvironment;
+import org.apache.fineract.cn.test.servicestarter.Microservice;
+import org.apache.fineract.cn.customer.api.v1.CustomerEventConstants;
+import org.apache.fineract.cn.customer.api.v1.client.CustomerManager;
+import org.apache.fineract.cn.deposit.api.v1.client.DepositAccountManager;
+import org.apache.fineract.cn.group.api.v1.client.GroupManager;
+import org.apache.fineract.cn.identity.api.v1.client.IdentityManager;
+import org.apache.fineract.cn.identity.api.v1.domain.*;
+import org.apache.fineract.cn.identity.api.v1.events.ApplicationPermissionEvent;
+import org.apache.fineract.cn.identity.api.v1.events.ApplicationPermissionUserEvent;
+import org.apache.fineract.cn.identity.api.v1.events.ApplicationSignatureEvent;
+import org.apache.fineract.cn.identity.api.v1.events.EventConstants;
+import org.apache.fineract.cn.office.api.v1.client.OrganizationManager;
+import org.apache.fineract.cn.payroll.api.v1.client.PayrollManager;
+import org.apache.fineract.cn.portfolio.api.v1.client.PortfolioManager;
+import org.apache.fineract.cn.provisioner.api.v1.client.Provisioner;
+import org.apache.fineract.cn.provisioner.api.v1.domain.*;
+import org.apache.fineract.cn.reporting.api.v1.client.ReportManager;
+import org.apache.fineract.cn.rhythm.api.v1.client.RhythmManager;
+import org.apache.fineract.cn.rhythm.api.v1.events.BeatEvent;
+import org.apache.fineract.cn.teller.api.v1.client.TellerManager;
+import org.apache.fineract.cn.api.config.EnableApiFactory;
+import org.apache.fineract.cn.api.context.AutoGuest;
+import org.apache.fineract.cn.api.context.AutoSeshat;
+import org.apache.fineract.cn.api.context.AutoUserContext;
+import org.apache.fineract.cn.api.util.ApiConstants;
+import org.apache.fineract.cn.api.util.ApiFactory;
+import org.apache.fineract.cn.lang.AutoTenantContext;
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.junit.*;
@@ -85,8 +85,8 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
-import static io.mifos.accounting.api.v1.EventConstants.POST_ACCOUNT;
-import static io.mifos.accounting.api.v1.EventConstants.POST_LEDGER;
+import static org.apache.fineract.cn.accounting.api.v1.EventConstants.POST_ACCOUNT;
+import static org.apache.fineract.cn.accounting.api.v1.EventConstants.POST_LEDGER;
 
 @SuppressWarnings("SpringAutowiredFieldsWarningInspection")
 @RunWith(SpringRunner.class)
@@ -121,7 +121,7 @@ public class ServiceRunner {
   @ActiveMQForTest.EnableActiveMQListen
   @EnableApiFactory
   @EnableEventRecording(maxWait = 60_000)
-  @ComponentScan("io.mifos.dev.listener")
+  @ComponentScan("org.apache.fineract.cn.dev.listener")
   public static class TestConfiguration {
     public TestConfiguration() {
       super();
@@ -390,9 +390,9 @@ public class ServiceRunner {
       //the request is made outside of rhythm's initialization.
       final UserWithPassword schedulerUser = createSchedulerUserRoleAndPassword(tenantAdminPassword.getAdminPassword());
 
-      provisionApp(tenant, rhythmManager, io.mifos.rhythm.api.v1.events.EventConstants.INITIALIZE);
+      provisionApp(tenant, rhythmManager, org.apache.fineract.cn.rhythm.api.v1.events.EventConstants.INITIALIZE);
 
-      Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_APPLICATION_PERMISSION, new ApplicationPermissionEvent(rhythmManager.name(), io.mifos.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT)));
+      Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_APPLICATION_PERMISSION, new ApplicationPermissionEvent(rhythmManager.name(), org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT)));
 
       final Authentication schedulerUserAuthentication;
       try (final AutoGuest ignored2 = new AutoGuest()) {
@@ -403,24 +403,24 @@ public class ServiceRunner {
       try (final AutoUserContext ignored2 = new AutoUserContext(schedulerUser.getIdentifier(), schedulerUserAuthentication.getAccessToken())) {
         identityManager.api().setApplicationPermissionEnabledForUser(
                 rhythmManager.name(),
-                io.mifos.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT,
+                org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT,
                 schedulerUser.getIdentifier(),
                 true);
-        Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_PUT_APPLICATION_PERMISSION_USER_ENABLED, new ApplicationPermissionUserEvent(rhythmManager.name(), io.mifos.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT, schedulerUser.getIdentifier())));
+        Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_PUT_APPLICATION_PERMISSION_USER_ENABLED, new ApplicationPermissionUserEvent(rhythmManager.name(), org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT, schedulerUser.getIdentifier())));
       }
 
-      provisionApp(tenant, ServiceRunner.organizationManager, io.mifos.office.api.v1.EventConstants.INITIALIZE);
+      provisionApp(tenant, ServiceRunner.organizationManager, org.apache.fineract.cn.office.api.v1.EventConstants.INITIALIZE);
 
-      provisionApp(tenant, ledgerManager, io.mifos.accounting.api.v1.EventConstants.INITIALIZE);
+      provisionApp(tenant, ledgerManager, org.apache.fineract.cn.accounting.api.v1.EventConstants.INITIALIZE);
 
-      provisionApp(tenant, portfolioManager, io.mifos.portfolio.api.v1.events.EventConstants.INITIALIZE);
+      provisionApp(tenant, portfolioManager, org.apache.fineract.cn.portfolio.api.v1.events.EventConstants.INITIALIZE);
 
       Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_PERMITTABLE_GROUP,
-              io.mifos.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name())));
+              org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name())));
 
       for (int i = 0; i < 24; i++) {
         Assert.assertTrue("Beat #" + i,
-                eventRecorder.wait(io.mifos.rhythm.api.v1.events.EventConstants.POST_BEAT,
+                eventRecorder.wait(org.apache.fineract.cn.rhythm.api.v1.events.EventConstants.POST_BEAT,
                         new BeatEvent(portfolioManager.name(), "alignment" + i)));
       }
 
@@ -433,27 +433,27 @@ public class ServiceRunner {
         //Allow rhythm to send a beat to portfolio as the scheduler user.
         identityManager.api().setApplicationPermissionEnabledForUser(
                 rhythmManager.name(),
-                io.mifos.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()),
+                org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()),
                 schedulerUser.getIdentifier(),
                 true);
         Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_PUT_APPLICATION_PERMISSION_USER_ENABLED,
                 new ApplicationPermissionUserEvent(rhythmManager.name(),
-                        io.mifos.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()), schedulerUser.getIdentifier())));
+                        org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()), schedulerUser.getIdentifier())));
       }
 
       provisionApp(tenant, ServiceRunner.customerManager, CustomerEventConstants.INITIALIZE);
 
-      provisionApp(tenant, depositAccountManager, io.mifos.deposit.api.v1.EventConstants.INITIALIZE);
+      provisionApp(tenant, depositAccountManager, org.apache.fineract.cn.deposit.api.v1.EventConstants.INITIALIZE);
 
-      provisionApp(tenant, ServiceRunner.tellerManager, io.mifos.teller.api.v1.EventConstants.INITIALIZE);
+      provisionApp(tenant, ServiceRunner.tellerManager, org.apache.fineract.cn.teller.api.v1.EventConstants.INITIALIZE);
 
-      provisionApp(tenant, ServiceRunner.reportManager, io.mifos.reporting.api.v1.EventConstants.INITIALIZE);
+      provisionApp(tenant, ServiceRunner.reportManager, org.apache.fineract.cn.reporting.api.v1.EventConstants.INITIALIZE);
 
-      provisionApp(tenant, ServiceRunner.chequeManager, io.mifos.cheque.api.v1.EventConstants.INITIALIZE);
+      provisionApp(tenant, ServiceRunner.chequeManager, org.apache.fineract.cn.cheque.api.v1.EventConstants.INITIALIZE);
 
-      provisionApp(tenant, ServiceRunner.payrollManager, io.mifos.payroll.api.v1.EventConstants.INITIALIZE);
+      provisionApp(tenant, ServiceRunner.payrollManager, org.apache.fineract.cn.payroll.api.v1.EventConstants.INITIALIZE);
 
-      provisionApp(tenant, ServiceRunner.groupManager, io.mifos.group.api.v1.EventConstants.INITIALIZE);
+      provisionApp(tenant, ServiceRunner.groupManager, org.apache.fineract.cn.group.api.v1.EventConstants.INITIALIZE);
 
       final UserWithPassword orgAdminUserPassword = createOrgAdminRoleAndUser(tenantAdminPassword.getAdminPassword());
 
@@ -530,11 +530,11 @@ public class ServiceRunner {
   private Role defineSchedulerRole() {
     final Permission permissionRequestionCreationPermission = new Permission();
     permissionRequestionCreationPermission.setAllowedOperations(Collections.singleton(AllowedOperation.CHANGE));
-    permissionRequestionCreationPermission.setPermittableEndpointGroupIdentifier(io.mifos.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT);
+    permissionRequestionCreationPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT);
 
     final Permission beatPublishToPortfolioPermission = new Permission();
     beatPublishToPortfolioPermission.setAllowedOperations(Collections.singleton(AllowedOperation.CHANGE));
-    beatPublishToPortfolioPermission.setPermittableEndpointGroupIdentifier(io.mifos.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()));
+    beatPublishToPortfolioPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()));
 
     final Role role = new Role();
     role.setIdentifier("scheduler");
@@ -573,31 +573,31 @@ public class ServiceRunner {
   private Role defineOrgAdministratorRole() {
     final Permission employeeAllPermission = new Permission();
     employeeAllPermission.setAllowedOperations(AllowedOperation.ALL);
-    employeeAllPermission.setPermittableEndpointGroupIdentifier(io.mifos.office.api.v1.PermittableGroupIds.EMPLOYEE_MANAGEMENT);
+    employeeAllPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.office.api.v1.PermittableGroupIds.EMPLOYEE_MANAGEMENT);
 
     final Permission officeAllPermission = new Permission();
     officeAllPermission.setAllowedOperations(AllowedOperation.ALL);
-    officeAllPermission.setPermittableEndpointGroupIdentifier(io.mifos.office.api.v1.PermittableGroupIds.OFFICE_MANAGEMENT);
+    officeAllPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.office.api.v1.PermittableGroupIds.OFFICE_MANAGEMENT);
 
     final Permission userAllPermission = new Permission();
     userAllPermission.setAllowedOperations(AllowedOperation.ALL);
-    userAllPermission.setPermittableEndpointGroupIdentifier(io.mifos.identity.api.v1.PermittableGroupIds.IDENTITY_MANAGEMENT);
+    userAllPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.IDENTITY_MANAGEMENT);
 
     final Permission roleAllPermission = new Permission();
     roleAllPermission.setAllowedOperations(AllowedOperation.ALL);
-    roleAllPermission.setPermittableEndpointGroupIdentifier(io.mifos.identity.api.v1.PermittableGroupIds.ROLE_MANAGEMENT);
+    roleAllPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.ROLE_MANAGEMENT);
 
     final Permission selfManagementPermission = new Permission();
     selfManagementPermission.setAllowedOperations(AllowedOperation.ALL);
-    selfManagementPermission.setPermittableEndpointGroupIdentifier(io.mifos.identity.api.v1.PermittableGroupIds.SELF_MANAGEMENT);
+    selfManagementPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.SELF_MANAGEMENT);
 
     final Permission ledgerManagementPermission = new Permission();
     ledgerManagementPermission.setAllowedOperations(AllowedOperation.ALL);
-    ledgerManagementPermission.setPermittableEndpointGroupIdentifier(io.mifos.accounting.api.v1.PermittableGroupIds.THOTH_LEDGER);
+    ledgerManagementPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.accounting.api.v1.PermittableGroupIds.THOTH_LEDGER);
 
     final Permission accountManagementPermission = new Permission();
     accountManagementPermission.setAllowedOperations(AllowedOperation.ALL);
-    accountManagementPermission.setPermittableEndpointGroupIdentifier(io.mifos.accounting.api.v1.PermittableGroupIds.THOTH_ACCOUNT);
+    accountManagementPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.accounting.api.v1.PermittableGroupIds.THOTH_ACCOUNT);
 
     final Role role = new Role();
     role.setIdentifier("orgadmin");

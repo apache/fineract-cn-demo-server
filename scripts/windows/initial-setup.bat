@@ -24,72 +24,72 @@ mkdir core
 cd core
 
 REM initialize lang
-git clone https://github.com/%githubAccount%/lang.git
+git clone https://github.com/%githubAccount%/fineract-cn-lang.git
 cd lang
-git remote add upstream https://github.com/mifosio/lang.git
+git remote add upstream https://github.com/apache/fineract-cn-lang.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze async
-git clone https://github.com/%githubAccount%/async.git
+REM initialize async
+git clone https://github.com/%githubAccount%/fineract-cn-async.git
 cd async
-git remote add upstream https://github.com/mifosio/async.git
+git remote add upstream https://github.com/apache/fineract-cn-async.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze cassandra
-git clone https://github.com/%githubAccount%/cassandra.git
+REM initialize cassandra
+git clone https://github.com/%githubAccount%/fineract-cn-cassandra.git
 cd cassandra
-git remote add upstream https://github.com/mifosio/cassandra.git
+git remote add upstream https://github.com/apache/fineract-cn-cassandra.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze mariadb
-git clone https://github.com/%githubAccount%/mariadb.git
+REM initialize mariadb
+git clone https://github.com/%githubAccount%/fineract-cn-mariadb.git
 cd mariadb
-git remote add upstream https://github.com/mifosio/mariadb.git
+git remote add upstream https://github.com/apache/fineract-cn-mariadb.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze data-jpa
-git clone https://github.com/%githubAccount%/data-jpa.git
+REM initialize data-jpa
+git clone https://github.com/%githubAccount%/fineract-cn-data-jpa.git
 cd data-jpa
-git remote add upstream https://github.com/mifosio/data-jpa.git
+git remote add upstream https://github.com/apache/fineract-cn-data-jpa.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze command
-git clone https://github.com/%githubAccount%/command.git
+REM initialize command
+git clone https://github.com/%githubAccount%/fineract-cn-command.git
 cd command
-git remote add upstream https://github.com/mifosio/command.git
+git remote add upstream https://github.com/apache/fineract-cn-command.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze api
-git clone https://github.com/%githubAccount%/api.git
+REM initialize api
+git clone https://github.com/%githubAccount%/fineract-cn-api.git
 cd api
-git remote add upstream https://github.com/mifosio/api.git
+git remote add upstream https://github.com/apache/fineract-cn-api.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze test
-git clone https://github.com/%githubAccount%/test.git
+REM initialize test
+git clone https://github.com/%githubAccount%/fineract-cn-test.git
 cd test
-git remote add upstream https://github.com/mifosio/test.git
+git remote add upstream https://github.com/apache/fineract-cn-test.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
@@ -102,7 +102,7 @@ REM create tools folder
 mkdir tools
 cd tools
 
-REM initialze javamoney
+REM initialize javamoney
 git clone https://github.com/%githubAccount%/javamoney-lib.git
 cd javamoney-lib
 git remote add upstream https://github.com/JavaMoney/javamoney-lib.git
@@ -111,10 +111,10 @@ CALL mvn install -Dmaven.test.skip=true
 TIMEOUT /T 5
 cd ..
 
-REM initialze crypto
-git clone https://github.com/%githubAccount%/crypto.git
+REM initialize crypto
+git clone https://github.com/%githubAccount%/fineract-cn-crypto.git
 cd crypto
-git remote add upstream https://github.com/mifosio/crypto.git
+git remote add upstream https://github.com/apache/fineract-cn-crypto.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
@@ -123,145 +123,145 @@ cd ..
 REM return to start folder
 cd ..
 
-REM initialze anubis
-git clone https://github.com/%githubAccount%/anubis.git
+REM initialize anubis
+git clone https://github.com/%githubAccount%/fineract-cn-anubis.git
 cd anubis
-git remote add upstream https://github.com/mifosio/anubis.git
+git remote add upstream https://github.com/apache/fineract-cn-anubis.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
 REM initialize permitted-feign-client
-git clone https://github.com/%githubAccount%/permitted-feign-client.git
+git clone https://github.com/%githubAccount%/fineract-cn-permitted-feign-client.git
 cd permitted-feign-client
-git remote add upstream https://github.com/mifosio/permitted-feign-client.git
+git remote add upstream https://github.com/apache/fineract-cn-permitted-feign-client.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze provisioner
-git clone https://github.com/%githubAccount%/provisioner.git
+REM initialize provisioner
+git clone https://github.com/%githubAccount%/fineract-cn-provisioner.git
 cd provisioner
-git remote add upstream https://github.com/mifosio/provisioner.git
+git remote add upstream https://github.com/apache/fineract-cn-provisioner.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze identity
-git clone https://github.com/%githubAccount%/identity.git
+REM initialize identity
+git clone https://github.com/%githubAccount%/fineract-cn-identity.git
 cd identity
-git remote add upstream https://github.com/mifosio/identity.git
+git remote add upstream https://github.com/apache/fineract-cn-identity.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze rhythm
-git clone https://github.com/%githubAccount%/rhythm.git
+REM initialize rhythm
+git clone https://github.com/%githubAccount%/fineract-cn-rhythm.git
 cd rhythm
-git remote add upstream https://github.com/mifosio/rhythm.git
+git remote add upstream https://github.com/apache/fineract-cn-rhythm.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze template
-git clone https://github.com/%githubAccount%/template.git
+REM initialize template
+git clone https://github.com/%githubAccount%/fineract-cn-template.git
 cd template
-git remote add upstream https://github.com/mifosio/template.git
+git remote add upstream https://github.com/apache/fineract-cn-template.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze office
-git clone https://github.com/%githubAccount%/office.git
+REM initialize office
+git clone https://github.com/%githubAccount%/fineract-cn-office.git
 cd office
-git remote add upstream https://github.com/mifosio/office.git
+git remote add upstream https://github.com/apache/fineract-cn-office.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze customer
-git clone https://github.com/%githubAccount%/customer.git
+REM initialize customer
+git clone https://github.com/%githubAccount%/fineract-cn-customer.git
 cd customer
-git remote add upstream https://github.com/mifosio/customer.git
+git remote add upstream https://github.com/apache/fineract-cn-customer.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze group
-git clone https://github.com/%githubAccount%/group.git
+REM initialize group
+git clone https://github.com/%githubAccount%/fineract-cn-group.git
 cd group
-git remote add upstream https://github.com/mifosio/group.git
+git remote add upstream https://github.com/apache/fineract-cn-group.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze accounting
-git clone https://github.com/%githubAccount%/accounting.git
+REM initialize accounting
+git clone https://github.com/%githubAccount%/fineract-cn-accounting.git
 cd accounting
-git remote add upstream https://github.com/mifosio/accounting.git
+git remote add upstream https://github.com/apache/fineract-cn-accounting.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze portfolio
-git clone https://github.com/%githubAccount%/portfolio.git
+REM initialize portfolio
+git clone https://github.com/%githubAccount%/fineract-cn-portfolio.git
 cd portfolio
-git remote add upstream https://github.com/mifosio/portfolio.git
+git remote add upstream https://github.com/apache/fineract-cn-portfolio.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze deposit-account-management
-git clone https://github.com/%githubAccount%/deposit-account-management.git
+REM initialize deposit-account-management
+git clone https://github.com/%githubAccount%/fineract-cn-deposit-account-management.git
 cd deposit-account-management
-git remote add upstream https://github.com/mifosio/deposit-account-management.git
+git remote add upstream https://github.com/apache/fineract-cn-deposit-account-management.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze cheques
-git clone https://github.com/%githubAccount%/cheques.git
+REM initialize cheques
+git clone https://github.com/%githubAccount%/fineract-cn-cheques.git
 cd cheques
-git remote add upstream https://github.com/mifosio/cheques.git
+git remote add upstream https://github.com/apache/fineract-cn-cheques.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze teller
-git clone https://github.com/%githubAccount%/teller.git
+REM initialize teller
+git clone https://github.com/%githubAccount%/fineract-cn-teller.git
 cd teller
-git remote add upstream https://github.com/mifosio/teller.git
+git remote add upstream https://github.com/apache/fineract-cn-teller.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze reporting
-git clone https://github.com/%githubAccount%/reporting.git
+REM initialize reporting
+git clone https://github.com/%githubAccount%/fineract-cn-reporting.git
 cd reporting
-git remote add upstream https://github.com/mifosio/reporting.git
+git remote add upstream https://github.com/apache/fineract-cn-reporting.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze payroll
-git clone https://github.com/%githubAccount%/payroll.git
+REM initialize payroll
+git clone https://github.com/%githubAccount%/fineract-cn-payroll.git
 cd payroll
-git remote add upstream https://github.com/mifosio/payroll.git
+git remote add upstream https://github.com/apache/fineract-cn-payroll.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
@@ -270,57 +270,39 @@ cd ..
 mkdir integration-tests
 cd integration-tests
 
-REM initialze service-starter
-git clone https://github.com/%githubAccount%/service-starter.git
+REM initialize service-starter
+git clone https://github.com/%githubAccount%/fineract-cn-service-starter.git
 cd service-starter
-git remote add upstream https://github.com/mifosio/service-starter.git
+git remote add upstream https://github.com/apache/fineract-cn-service-starter.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze default-setup
-git clone https://github.com/%githubAccount%/default-setup.git
+REM initialize default-setup
+git clone https://github.com/%githubAccount%/fineract-cn-default-setup.git
 cd default-setup
-git remote add upstream https://github.com/mifosio/default-setup.git
+git remote add upstream https://github.com/apache/fineract-cn-default-setup.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze demo-server
-git clone https://github.com/%githubAccount%/demo-server.git
+REM initialize demo-server
+git clone https://github.com/%githubAccount%/fineract-cn-demo-server.git
 cd demo-server
-git remote add upstream https://github.com/mifosio/demo-server.git
+git remote add upstream https://github.com/apache/fineract-cn-demo-server.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze test-provisioner-identity-organization
-git clone https://github.com/%githubAccount%/test-provisioner-identity-organization.git
-cd test-provisioner-identity-organization
-git remote add upstream https://github.com/mifosio/test-provisioner-identity-organization.git
-git checkout develop
-CALL gradlew build
-TIMEOUT /T 5
 cd ..
 
-REM initialze test-accounting-portfolio
-git clone https://github.com/%githubAccount%/test-accounting-portfolio.git
-cd test-accounting-portfolio
-git remote add upstream https://github.com/mifosio/test-accounting-portfolio.git
-git checkout develop
-CALL gradlew build
-TIMEOUT /T 5
-cd ..
-
-cd ..
-
-REM initialze Web App
-git clone https://github.com/%githubAccount%/fims-web-app.git
+REM initialize Web App
+git clone https://github.com/%githubAccount%/fineract-cn-fims-web-app.git
 cd fims-web-app
-git remote add upstream https://github.com/mifosio/fims-web-app.git
+git remote add upstream https://github.com/apache/fineract-cn-fims-web-app.git
 git checkout develop
 CALL npm i
 TIMEOUT /T 5

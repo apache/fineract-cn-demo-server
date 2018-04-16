@@ -16,11 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.mifos.dev.listener;
+package org.apache.fineract.cn.dev.listener;
 
-import io.mifos.core.lang.config.TenantHeaderFilter;
-import io.mifos.core.test.listener.EventRecorder;
-import io.mifos.deposit.api.v1.EventConstants;
+import org.apache.fineract.cn.test.listener.EventRecorder;
+import org.apache.fineract.cn.deposit.api.v1.EventConstants;
+import org.apache.fineract.cn.lang.config.TenantHeaderFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.messaging.handler.annotation.Header;

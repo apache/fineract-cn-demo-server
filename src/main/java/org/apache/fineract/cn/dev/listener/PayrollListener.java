@@ -16,27 +16,23 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.mifos.dev.listener;
+package org.apache.fineract.cn.dev.listener;
 
-import io.mifos.core.lang.config.TenantHeaderFilter;
-import io.mifos.core.test.listener.EventRecorder;
-import io.mifos.office.api.v1.EventConstants;
+import org.apache.fineract.cn.test.listener.EventRecorder;
+import org.apache.fineract.cn.payroll.api.v1.EventConstants;
+import org.apache.fineract.cn.lang.config.TenantHeaderFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 
-/**
- * @author Myrle Krantz
- */
 @SuppressWarnings("unused")
 @Component
-public class OrganizationListener {
-
+public class PayrollListener {
   private final EventRecorder eventRecorder;
 
   @Autowired
-  public OrganizationListener(final EventRecorder eventRecorder) {
+  public PayrollListener(final EventRecorder eventRecorder) {
     this.eventRecorder = eventRecorder;
   }
 

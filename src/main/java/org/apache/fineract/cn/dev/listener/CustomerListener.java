@@ -16,11 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.mifos.dev.listener;
+package org.apache.fineract.cn.dev.listener;
 
-import io.mifos.core.lang.config.TenantHeaderFilter;
-import io.mifos.core.test.listener.EventRecorder;
-import io.mifos.reporting.api.v1.EventConstants;
+import org.apache.fineract.cn.test.listener.EventRecorder;
+import org.apache.fineract.cn.customer.api.v1.CustomerEventConstants;
+import org.apache.fineract.cn.lang.config.TenantHeaderFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.messaging.handler.annotation.Header;
@@ -28,22 +28,22 @@ import org.springframework.stereotype.Component;
 
 @SuppressWarnings("unused")
 @Component
-public class ReportingListener {
+public class CustomerListener {
 
   private final EventRecorder eventRecorder;
 
   @Autowired
-  public ReportingListener(final EventRecorder eventRecorder) {
+  public CustomerListener(final EventRecorder eventRecorder) {
     this.eventRecorder = eventRecorder;
   }
 
   @JmsListener(
-      subscription = EventConstants.DESTINATION,
-      destination = EventConstants.DESTINATION,
-      selector = EventConstants.SELECTOR_INITIALIZE
+      subscription = CustomerEventConstants.DESTINATION,
+      destination = CustomerEventConstants.DESTINATION,
+      selector = CustomerEventConstants.SELECTOR_INITIALIZE
   )
   public void onInitialized(@Header(TenantHeaderFilter.TENANT_HEADER) final String tenant,
                             final String payload) {
-    this.eventRecorder.event(tenant, EventConstants.INITIALIZE, payload, String.class);
+    this.eventRecorder.event(tenant, CustomerEventConstants.INITIALIZE, payload, String.class);
   }
 }
