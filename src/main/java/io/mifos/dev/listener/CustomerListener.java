@@ -18,9 +18,9 @@
  */
 package io.mifos.dev.listener;
 
-import io.mifos.core.lang.config.TenantHeaderFilter;
-import io.mifos.core.test.listener.EventRecorder;
-import io.mifos.customer.api.v1.CustomerEventConstants;
+import org.apache.fineract.cn.test.listener.EventRecorder;
+import org.apache.fineract.cn.customer.api.v1.CustomerEventConstants;
+import org.apache.fineract.cn.lang.config.TenantHeaderFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.messaging.handler.annotation.Header;

@@ -18,7 +18,7 @@
  */
 package io.mifos.dev;
 
-import io.mifos.provisioner.api.v1.domain.Application;
+import org.apache.fineract.cn.provisioner.api.v1.domain.Application;
 
 class ApplicationBuilder {
 

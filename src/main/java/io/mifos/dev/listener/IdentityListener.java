@@ -18,12 +18,12 @@
  */
 package io.mifos.dev.listener;
 
-import io.mifos.core.lang.config.TenantHeaderFilter;
-import io.mifos.core.test.listener.EventRecorder;
-import io.mifos.identity.api.v1.events.ApplicationPermissionEvent;
-import io.mifos.identity.api.v1.events.ApplicationPermissionUserEvent;
-import io.mifos.identity.api.v1.events.ApplicationSignatureEvent;
-import io.mifos.identity.api.v1.events.EventConstants;
+import org.apache.fineract.cn.test.listener.EventRecorder;
+import org.apache.fineract.cn.identity.api.v1.events.ApplicationPermissionEvent;
+import org.apache.fineract.cn.identity.api.v1.events.ApplicationPermissionUserEvent;
+import org.apache.fineract.cn.identity.api.v1.events.ApplicationSignatureEvent;
+import org.apache.fineract.cn.identity.api.v1.events.EventConstants;
+import org.apache.fineract.cn.lang.config.TenantHeaderFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.messaging.handler.annotation.Header;

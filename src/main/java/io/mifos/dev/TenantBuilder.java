@@ -18,12 +18,12 @@
  */
 package io.mifos.dev;
 
-import io.mifos.core.cassandra.util.CassandraConnectorConstants;
-import io.mifos.core.mariadb.util.MariaDBConstants;
-import io.mifos.core.test.env.TestEnvironment;
-import io.mifos.provisioner.api.v1.domain.CassandraConnectionInfo;
-import io.mifos.provisioner.api.v1.domain.DatabaseConnectionInfo;
-import io.mifos.provisioner.api.v1.domain.Tenant;
+import org.apache.fineract.cn.cassandra.util.CassandraConnectorConstants;
+import org.apache.fineract.cn.mariadb.util.MariaDBConstants;
+import org.apache.fineract.cn.test.env.TestEnvironment;
+import org.apache.fineract.cn.provisioner.api.v1.domain.CassandraConnectionInfo;
+import org.apache.fineract.cn.provisioner.api.v1.domain.DatabaseConnectionInfo;
+import org.apache.fineract.cn.provisioner.api.v1.domain.Tenant;
 
 class TenantBuilder {
 
