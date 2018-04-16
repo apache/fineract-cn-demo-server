@@ -32,7 +32,7 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze async
+REM initialize async
 git clone https://github.com/%githubAccount%/fineract-cn-async.git
 cd async
 git remote add upstream https://github.com/apache/fineract-cn-async.git
@@ -41,7 +41,7 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze cassandra
+REM initialize cassandra
 git clone https://github.com/%githubAccount%/fineract-cn-cassandra.git
 cd cassandra
 git remote add upstream https://github.com/apache/fineract-cn-cassandra.git
@@ -50,7 +50,7 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze mariadb
+REM initialize mariadb
 git clone https://github.com/%githubAccount%/fineract-cn-mariadb.git
 cd mariadb
 git remote add upstream https://github.com/apache/fineract-cn-mariadb.git
@@ -59,7 +59,7 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze data-jpa
+REM initialize data-jpa
 git clone https://github.com/%githubAccount%/fineract-cn-data-jpa.git
 cd data-jpa
 git remote add upstream https://github.com/apache/fineract-cn-data-jpa.git
@@ -68,7 +68,7 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze command
+REM initialize command
 git clone https://github.com/%githubAccount%/fineract-cn-command.git
 cd command
 git remote add upstream https://github.com/apache/fineract-cn-command.git
@@ -77,7 +77,7 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze api
+REM initialize api
 git clone https://github.com/%githubAccount%/fineract-cn-api.git
 cd api
 git remote add upstream https://github.com/apache/fineract-cn-api.git
@@ -86,7 +86,7 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze test
+REM initialize test
 git clone https://github.com/%githubAccount%/fineract-cn-test.git
 cd test
 git remote add upstream https://github.com/apache/fineract-cn-test.git
@@ -102,7 +102,7 @@ REM create tools folder
 mkdir tools
 cd tools
 
-REM initialze javamoney
+REM initialize javamoney
 git clone https://github.com/%githubAccount%/javamoney-lib.git
 cd javamoney-lib
 git remote add upstream https://github.com/JavaMoney/javamoney-lib.git
@@ -111,7 +111,7 @@ CALL mvn install -Dmaven.test.skip=true
 TIMEOUT /T 5
 cd ..
 
-REM initialze crypto
+REM initialize crypto
 git clone https://github.com/%githubAccount%/fineract-cn-crypto.git
 cd crypto
 git remote add upstream https://github.com/apache/fineract-cn-crypto.git
@@ -123,7 +123,7 @@ cd ..
 REM return to start folder
 cd ..
 
-REM initialze anubis
+REM initialize anubis
 git clone https://github.com/%githubAccount%/fineract-cn-anubis.git
 cd anubis
 git remote add upstream https://github.com/apache/fineract-cn-anubis.git
@@ -141,7 +141,7 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze provisioner
+REM initialize provisioner
 git clone https://github.com/%githubAccount%/fineract-cn-provisioner.git
 cd provisioner
 git remote add upstream https://github.com/apache/fineract-cn-provisioner.git
@@ -150,7 +150,7 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze identity
+REM initialize identity
 git clone https://github.com/%githubAccount%/fineract-cn-identity.git
 cd identity
 git remote add upstream https://github.com/apache/fineract-cn-identity.git
@@ -159,7 +159,7 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze rhythm
+REM initialize rhythm
 git clone https://github.com/%githubAccount%/fineract-cn-rhythm.git
 cd rhythm
 git remote add upstream https://github.com/apache/fineract-cn-rhythm.git
@@ -168,7 +168,7 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze template
+REM initialize template
 git clone https://github.com/%githubAccount%/fineract-cn-template.git
 cd template
 git remote add upstream https://github.com/apache/fineract-cn-template.git
@@ -177,7 +177,7 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze office
+REM initialize office
 git clone https://github.com/%githubAccount%/fineract-cn-office.git
 cd office
 git remote add upstream https://github.com/apache/fineract-cn-office.git
@@ -186,7 +186,7 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze customer
+REM initialize customer
 git clone https://github.com/%githubAccount%/fineract-cn-customer.git
 cd customer
 git remote add upstream https://github.com/apache/fineract-cn-customer.git
@@ -195,7 +195,7 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze group
+REM initialize group
 git clone https://github.com/%githubAccount%/fineract-cn-group.git
 cd group
 git remote add upstream https://github.com/apache/fineract-cn-group.git
@@ -204,7 +204,7 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze accounting
+REM initialize accounting
 git clone https://github.com/%githubAccount%/fineract-cn-accounting.git
 cd accounting
 git remote add upstream https://github.com/apache/fineract-cn-accounting.git
@@ -213,7 +213,7 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze portfolio
+REM initialize portfolio
 git clone https://github.com/%githubAccount%/fineract-cn-portfolio.git
 cd portfolio
 git remote add upstream https://github.com/apache/fineract-cn-portfolio.git
@@ -222,7 +222,7 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze deposit-account-management
+REM initialize deposit-account-management
 git clone https://github.com/%githubAccount%/fineract-cn-deposit-account-management.git
 cd deposit-account-management
 git remote add upstream https://github.com/apache/fineract-cn-deposit-account-management.git
@@ -231,7 +231,7 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze cheques
+REM initialize cheques
 git clone https://github.com/%githubAccount%/fineract-cn-cheques.git
 cd cheques
 git remote add upstream https://github.com/apache/fineract-cn-cheques.git
@@ -240,7 +240,7 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze teller
+REM initialize teller
 git clone https://github.com/%githubAccount%/fineract-cn-teller.git
 cd teller
 git remote add upstream https://github.com/apache/fineract-cn-teller.git
@@ -249,7 +249,7 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze reporting
+REM initialize reporting
 git clone https://github.com/%githubAccount%/fineract-cn-reporting.git
 cd reporting
 git remote add upstream https://github.com/apache/fineract-cn-reporting.git
@@ -258,7 +258,7 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze payroll
+REM initialize payroll
 git clone https://github.com/%githubAccount%/fineract-cn-payroll.git
 cd payroll
 git remote add upstream https://github.com/apache/fineract-cn-payroll.git
@@ -270,7 +270,7 @@ cd ..
 mkdir integration-tests
 cd integration-tests
 
-REM initialze service-starter
+REM initialize service-starter
 git clone https://github.com/%githubAccount%/fineract-cn-service-starter.git
 cd service-starter
 git remote add upstream https://github.com/apache/fineract-cn-service-starter.git
@@ -279,7 +279,7 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze default-setup
+REM initialize default-setup
 git clone https://github.com/%githubAccount%/fineract-cn-default-setup.git
 cd default-setup
 git remote add upstream https://github.com/apache/fineract-cn-default-setup.git
@@ -288,7 +288,7 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialze demo-server
+REM initialize demo-server
 git clone https://github.com/%githubAccount%/fineract-cn-demo-server.git
 cd demo-server
 git remote add upstream https://github.com/apache/fineract-cn-demo-server.git
@@ -299,7 +299,7 @@ cd ..
 
 cd ..
 
-REM initialze Web App
+REM initialize Web App
 git clone https://github.com/%githubAccount%/fineract-cn-fims-web-app.git
 cd fims-web-app
 git remote add upstream https://github.com/apache/fineract-cn-fims-web-app.git
