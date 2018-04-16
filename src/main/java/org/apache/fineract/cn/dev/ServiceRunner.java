@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.mifos.dev;
+package org.apache.fineract.cn.dev;
 
 import ch.vorburger.mariadb4j.DB;
 import ch.vorburger.mariadb4j.DBConfigurationBuilder;
@@ -121,7 +121,7 @@ public class ServiceRunner {
   @ActiveMQForTest.EnableActiveMQListen
   @EnableApiFactory
   @EnableEventRecording(maxWait = 60_000)
-  @ComponentScan("io.mifos.dev.listener")
+  @ComponentScan("org.apache.fineract.cn.dev.listener")
   public static class TestConfiguration {
     public TestConfiguration() {
       super();

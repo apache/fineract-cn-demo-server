@@ -16,24 +16,27 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.mifos.dev.listener;
+package org.apache.fineract.cn.dev.listener;
 
-import org.apache.fineract.cn.cheque.api.v1.EventConstants;
 import org.apache.fineract.cn.test.listener.EventRecorder;
+import org.apache.fineract.cn.office.api.v1.EventConstants;
 import org.apache.fineract.cn.lang.config.TenantHeaderFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 
+/**
+ * @author Myrle Krantz
+ */
 @SuppressWarnings("unused")
 @Component
-public class ChequesListener {
+public class OrganizationListener {
 
   private final EventRecorder eventRecorder;
 
   @Autowired
-  public ChequesListener(final EventRecorder eventRecorder) {
+  public OrganizationListener(final EventRecorder eventRecorder) {
     this.eventRecorder = eventRecorder;
   }
 
@@ -47,4 +50,3 @@ public class ChequesListener {
     this.eventRecorder.event(tenant, EventConstants.INITIALIZE, payload, String.class);
   }
 }
-

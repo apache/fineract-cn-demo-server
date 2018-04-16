@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.mifos.dev.listener;
+package org.apache.fineract.cn.dev.listener;
 
 import org.apache.fineract.cn.test.listener.EventRecorder;
 import org.apache.fineract.cn.identity.api.v1.events.ApplicationPermissionEvent;

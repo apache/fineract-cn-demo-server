@@ -16,34 +16,36 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.mifos.dev.listener;
+package org.apache.fineract.cn.dev.listener;
 
+import org.apache.fineract.cn.group.api.v1.EventConstants;
 import org.apache.fineract.cn.test.listener.EventRecorder;
-import org.apache.fineract.cn.deposit.api.v1.EventConstants;
 import org.apache.fineract.cn.lang.config.TenantHeaderFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 
+/**
+ * @author Myrle Krantz
+ */
 @SuppressWarnings("unused")
 @Component
-public class DepositAccountManagementListener {
-
+public class GroupListener {
   private final EventRecorder eventRecorder;
 
   @Autowired
-  public DepositAccountManagementListener(final EventRecorder eventRecorder) {
+  public GroupListener(final EventRecorder eventRecorder) {
     this.eventRecorder = eventRecorder;
   }
 
   @JmsListener(
-      subscription = EventConstants.DESTINATION,
       destination = EventConstants.DESTINATION,
-      selector = EventConstants.SELECTOR_INITIALIZE
+      selector = EventConstants.SELECTOR_INITIALIZE,
+      subscription = EventConstants.DESTINATION
   )
-  public void onInitialized(@Header(TenantHeaderFilter.TENANT_HEADER) final String tenant,
-                            final String payload) {
+  public void onInitialization(@Header(TenantHeaderFilter.TENANT_HEADER) final String tenant,
+      final String payload) {
     this.eventRecorder.event(tenant, EventConstants.INITIALIZE, payload, String.class);
   }
 }

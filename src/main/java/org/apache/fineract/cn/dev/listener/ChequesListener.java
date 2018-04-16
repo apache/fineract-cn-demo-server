@@ -16,10 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.mifos.dev.listener;
+package org.apache.fineract.cn.dev.listener;
 
+import org.apache.fineract.cn.cheque.api.v1.EventConstants;
 import org.apache.fineract.cn.test.listener.EventRecorder;
-import org.apache.fineract.cn.reporting.api.v1.EventConstants;
 import org.apache.fineract.cn.lang.config.TenantHeaderFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
@@ -28,22 +28,23 @@ import org.springframework.stereotype.Component;
 
 @SuppressWarnings("unused")
 @Component
-public class ReportingListener {
+public class ChequesListener {
 
   private final EventRecorder eventRecorder;
 
   @Autowired
-  public ReportingListener(final EventRecorder eventRecorder) {
+  public ChequesListener(final EventRecorder eventRecorder) {
     this.eventRecorder = eventRecorder;
   }
 
   @JmsListener(
-      subscription = EventConstants.DESTINATION,
-      destination = EventConstants.DESTINATION,
-      selector = EventConstants.SELECTOR_INITIALIZE
+          subscription = EventConstants.DESTINATION,
+          destination = EventConstants.DESTINATION,
+          selector = EventConstants.SELECTOR_INITIALIZE
   )
   public void onInitialized(@Header(TenantHeaderFilter.TENANT_HEADER) final String tenant,
                             final String payload) {
     this.eventRecorder.event(tenant, EventConstants.INITIALIZE, payload, String.class);
   }
 }
+

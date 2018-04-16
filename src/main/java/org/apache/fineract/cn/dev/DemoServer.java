@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.mifos.dev;
+package org.apache.fineract.cn.dev;
 
 import org.junit.runner.JUnitCore;
 
@@ -27,6 +27,6 @@ public class DemoServer {
   }
 
   public static void main(String[] args) {
-    JUnitCore.main("io.mifos.dev.ServiceRunner");
+    JUnitCore.main("org.apache.fineract.cn.dev.ServiceRunner");
   }
 }

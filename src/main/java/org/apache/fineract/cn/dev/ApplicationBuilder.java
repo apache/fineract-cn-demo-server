@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.mifos.dev;
+package org.apache.fineract.cn.dev;
 
 import org.apache.fineract.cn.provisioner.api.v1.domain.Application;
 

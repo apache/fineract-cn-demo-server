@@ -16,10 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.mifos.dev.listener;
+package org.apache.fineract.cn.dev.listener;
 
-import org.apache.fineract.cn.accounting.api.v1.EventConstants;
 import org.apache.fineract.cn.test.listener.EventRecorder;
+import org.apache.fineract.cn.portfolio.api.v1.events.EventConstants;
 import org.apache.fineract.cn.lang.config.TenantHeaderFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
@@ -31,19 +31,19 @@ import org.springframework.stereotype.Component;
  */
 @SuppressWarnings("unused")
 @Component
-public class AccountingListener {
+public class PortfolioListener {
 
   private final EventRecorder eventRecorder;
 
   @Autowired
-  public AccountingListener(final EventRecorder eventRecorder) {
+  public PortfolioListener(final EventRecorder eventRecorder) {
     this.eventRecorder = eventRecorder;
   }
 
   @JmsListener(
+          subscription = EventConstants.DESTINATION,
           destination = EventConstants.DESTINATION,
-          selector = EventConstants.SELECTOR_INITIALIZE,
-          subscription = EventConstants.DESTINATION
+          selector = EventConstants.SELECTOR_INITIALIZE
   )
   public void onInitialization(@Header(TenantHeaderFilter.TENANT_HEADER) final String tenant,
                                final String payload) {
@@ -51,22 +51,32 @@ public class AccountingListener {
   }
 
   @JmsListener(
+          subscription = EventConstants.DESTINATION,
           destination = EventConstants.DESTINATION,
-          selector = EventConstants.SELECTOR_POST_LEDGER,
-          subscription = EventConstants.DESTINATION
+          selector = EventConstants.SELECTOR_POST_PRODUCT
   )
-  public void onPostLedger(@Header(TenantHeaderFilter.TENANT_HEADER) final String tenant,
-                           final String payload) {
-    this.eventRecorder.event(tenant, EventConstants.POST_LEDGER, payload, String.class);
+  public void onCreateProduct(@Header(TenantHeaderFilter.TENANT_HEADER) final String tenant,
+                              final String payload) {
+    this.eventRecorder.event(tenant, EventConstants.POST_PRODUCT, payload, String.class);
   }
 
   @JmsListener(
+          subscription = EventConstants.DESTINATION,
           destination = EventConstants.DESTINATION,
-          selector = EventConstants.SELECTOR_POST_ACCOUNT,
-          subscription = EventConstants.DESTINATION
+          selector = EventConstants.SELECTOR_PUT_PRODUCT
   )
-  public void onCreateAccount(@Header(TenantHeaderFilter.TENANT_HEADER) final String tenant,
+  public void onChangeProduct(@Header(TenantHeaderFilter.TENANT_HEADER) final String tenant,
                               final String payload) {
-    this.eventRecorder.event(tenant, EventConstants.POST_ACCOUNT, payload, String.class);
+    this.eventRecorder.event(tenant, EventConstants.PUT_PRODUCT, payload, String.class);
+  }
+
+  @JmsListener(
+          subscription = EventConstants.DESTINATION,
+          destination = EventConstants.DESTINATION,
+          selector = EventConstants.SELECTOR_PUT_PRODUCT_ENABLE
+  )
+  public void onEnableProduct(@Header(TenantHeaderFilter.TENANT_HEADER) final String tenant,
+                              final String payload) {
+    this.eventRecorder.event(tenant, EventConstants.PUT_PRODUCT_ENABLE, payload, String.class);
   }
 }
