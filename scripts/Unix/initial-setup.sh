@@ -47,11 +47,6 @@ cd ..
 mkdir tools
 cd tools
 
-# REM initialize javamoney
-git clone https://github.com/JavaMoney/javamoney-lib.git
-cd javamoney-lib
-mvn install -Dmaven.test.skip=true
-
 cd ..
 
 # REM initialize fineract-cn-crypto

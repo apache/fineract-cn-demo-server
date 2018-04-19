@@ -102,15 +102,6 @@ REM create tools folder
 mkdir tools
 cd tools
 
-REM initialize javamoney
-git clone https://github.com/%githubAccount%/javamoney-lib.git
-cd javamoney-lib
-git remote add upstream https://github.com/JavaMoney/javamoney-lib.git
-git checkout master
-CALL mvn install -Dmaven.test.skip=true
-TIMEOUT /T 5
-cd ..
-
 REM initialize crypto
 git clone https://github.com/%githubAccount%/fineract-cn-crypto.git
 cd crypto
