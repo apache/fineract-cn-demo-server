@@ -47,8 +47,6 @@ cd ..
 mkdir tools
 cd tools
 
-cd ..
-
 # REM initialize fineract-cn-crypto
 git clone https://github.com/$githubAccount/fineract-cn-crypto.git
 cd fineract-cn-crypto
