@@ -53,7 +53,7 @@ import org.apache.fineract.cn.reporting.api.v1.client.ReportManager;
 import org.apache.fineract.cn.rhythm.api.v1.client.RhythmManager;
 import org.apache.fineract.cn.rhythm.api.v1.events.BeatEvent;
 import org.apache.fineract.cn.teller.api.v1.client.TellerManager;
-import org.apache.fineract.cn.notification.api.v1.client.TellerManager;
+import org.apache.fineract.cn.notification.api.v1.client.NotificationManager;
 import org.apache.fineract.cn.api.config.EnableApiFactory;
 import org.apache.fineract.cn.api.context.AutoGuest;
 import org.apache.fineract.cn.api.context.AutoSeshat;
