@@ -258,6 +258,15 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
+REM initialize notification
+git clone https://github.com/%githubAccount%/fineract-cn-notification.git
+cd notification
+git remote add upstream https://github.com/ebenezergraham/fineract-cn-notification.git
+git checkout develop
+CALL gradlew publishToMavenLocal
+TIMEOUT /T 5
+cd ..
+
 mkdir integration-tests
 cd integration-tests
 
