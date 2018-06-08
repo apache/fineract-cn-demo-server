@@ -26,6 +26,7 @@ import org.apache.fineract.cn.accounting.importer.LedgerImporter;
 import org.apache.fineract.cn.anubis.api.v1.domain.AllowedOperation;
 import org.apache.fineract.cn.cheque.api.v1.client.ChequeManager;
 import org.apache.fineract.cn.cassandra.util.CassandraConnectorConstants;
+import org.apache.fineract.cn.datamigration.api.v1.events.DatamigrationEventConstants;
 import org.apache.fineract.cn.mariadb.util.MariaDBConstants;
 import org.apache.fineract.cn.test.env.ExtraProperties;
 import org.apache.fineract.cn.test.listener.EnableEventRecording;
@@ -36,6 +37,9 @@ import org.apache.fineract.cn.test.servicestarter.IntegrationTestEnvironment;
 import org.apache.fineract.cn.test.servicestarter.Microservice;
 import org.apache.fineract.cn.customer.api.v1.CustomerEventConstants;
 import org.apache.fineract.cn.customer.api.v1.client.CustomerManager;
+
+import org.apache.fineract.cn.datamigration.api.v1.client.DatamigrationManager;
+
 import org.apache.fineract.cn.deposit.api.v1.client.DepositAccountManager;
 import org.apache.fineract.cn.group.api.v1.client.GroupManager;
 import org.apache.fineract.cn.identity.api.v1.client.IdentityManager;
@@ -103,6 +107,9 @@ public class ServiceRunner {
   private static Microservice<RhythmManager> rhythmManager;
   private static Microservice<OrganizationManager> organizationManager;
   private static Microservice<CustomerManager> customerManager;
+
+  private static Microservice<DatamigrationManager> datamigrationManager;
+
   private static Microservice<LedgerManager> ledgerManager;
   private static Microservice<PortfolioManager> portfolioManager;
   private static Microservice<DepositAccountManager> depositAccountManager;
@@ -111,6 +118,7 @@ public class ServiceRunner {
   private static Microservice<ChequeManager> chequeManager;
   private static Microservice<PayrollManager> payrollManager;
   private static Microservice<GroupManager> groupManager;
+
 
 
   private static DB embeddedMariaDb;
@@ -213,6 +221,9 @@ public class ServiceRunner {
     ServiceRunner.customerManager = new Microservice<>(CustomerManager.class, "customer", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
     startService(generalProperties, customerManager);
 
+    ServiceRunner.datamigrationManager = new Microservice<>(DatamigrationManager.class, "datamigration", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+    startService(generalProperties, datamigrationManager);
+
     ServiceRunner.ledgerManager = new Microservice<>(LedgerManager.class, "accounting", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
     startService(generalProperties, ledgerManager);
 
@@ -253,6 +264,9 @@ public class ServiceRunner {
     ServiceRunner.portfolioManager.kill();
     ServiceRunner.ledgerManager.kill();
     ServiceRunner.customerManager.kill();
+
+    ServiceRunner.datamigrationManager.kill();
+
     ServiceRunner.organizationManager.kill();
     ServiceRunner.identityManager.kill();
 
@@ -278,6 +292,9 @@ public class ServiceRunner {
     System.out.println("Identity Service: " + ServiceRunner.identityManager.getProcessEnvironment().serverURI());
     System.out.println("Office Service: " + ServiceRunner.organizationManager.getProcessEnvironment().serverURI());
     System.out.println("Customer Service: " + ServiceRunner.customerManager.getProcessEnvironment().serverURI());
+
+    System.out.println("Datamigration Service: " + ServiceRunner.datamigrationManager.getProcessEnvironment().serverURI());
+
     System.out.println("Accounting Service: " + ServiceRunner.ledgerManager.getProcessEnvironment().serverURI());
     System.out.println("Portfolio Service: " + ServiceRunner.portfolioManager.getProcessEnvironment().serverURI());
     System.out.println("Deposit Service: " + ServiceRunner.depositAccountManager.getProcessEnvironment().serverURI());
@@ -342,6 +359,9 @@ public class ServiceRunner {
         ApplicationBuilder.create(ServiceRunner.rhythmManager.name(), ServiceRunner.rhythmManager.uri()),
         ApplicationBuilder.create(ServiceRunner.organizationManager.name(), ServiceRunner.organizationManager.uri()),
         ApplicationBuilder.create(ServiceRunner.customerManager.name(), ServiceRunner.customerManager.uri()),
+
+        ApplicationBuilder.create(ServiceRunner.datamigrationManager.name(), ServiceRunner.datamigrationManager.uri()),
+
         ApplicationBuilder.create(ServiceRunner.ledgerManager.name(), ServiceRunner.ledgerManager.uri()),
         ApplicationBuilder.create(ServiceRunner.portfolioManager.name(), ServiceRunner.portfolioManager.uri()),
         ApplicationBuilder.create(ServiceRunner.depositAccountManager.name(), ServiceRunner.depositAccountManager.uri()),
@@ -442,6 +462,8 @@ public class ServiceRunner {
       }
 
       provisionApp(tenant, ServiceRunner.customerManager, CustomerEventConstants.INITIALIZE);
+
+      provisionApp(tenant, ServiceRunner.datamigrationManager, DatamigrationEventConstants.INITIALIZE);
 
       provisionApp(tenant, depositAccountManager, org.apache.fineract.cn.deposit.api.v1.EventConstants.INITIALIZE);
 

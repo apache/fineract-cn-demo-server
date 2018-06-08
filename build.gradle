@@ -44,6 +44,9 @@ ext.versions = [
         fineractcnprovisioner   : '0.1.0-BUILD-SNAPSHOT',
         fineractcnrhythm        : '0.1.0-BUILD-SNAPSHOT',
         fineractcnoffice        : '0.1.0-BUILD-SNAPSHOT',
+
+        fineractcndatamigration : '0.1.0-BUILD-SNAPSHOT',
+
         fineractcncustomer      : '0.1.0-BUILD-SNAPSHOT',
         fineractcnaccounting    : '0.1.0-BUILD-SNAPSHOT',
         fineractcnportfolio     : '0.1.0-BUILD-SNAPSHOT',
@@ -101,6 +104,9 @@ dependencies {
             [group: 'org.apache.fineract.cn.rhythm', name: 'spi', version: versions.fineractcnrhythm],
 
             [group: 'org.apache.fineract.cn.customer', name: 'api', version: versions.fineractcncustomer],
+
+            [group: 'org.apache.fineract.cn.datamigration', name: 'api', version: versions.fineractcndatamigration],
+
             [group: 'org.apache.fineract.cn.accounting', name: 'api', version: versions.fineractcnaccounting],
             [group: 'org.apache.fineract.cn.accounting', name: 'importer', version: versions.fineractcnaccounting],
             [group: 'org.apache.fineract.cn.portfolio', name: 'api', version: versions.fineractcnportfolio],
