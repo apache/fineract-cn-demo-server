@@ -306,7 +306,7 @@ public class ServiceRunner {
     logger.info("Service '{}' started and {} with Eureka.", microservice.name(), registered ? "registered" : "not registered");
     microservice.setApiFactory(this.apiFactory);
 
-    TimeUnit.SECONDS.sleep(20); //Give it some extra time before the next service...
+    TimeUnit.SECONDS.sleep(5); //Give it some extra time before the next service...
   }
 
   private void migrateServices() {
