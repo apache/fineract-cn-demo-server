@@ -110,14 +110,14 @@ public class ServiceRunner {
 
   private static Microservice<DatamigrationManager> datamigrationManager;
 
-  private static Microservice<LedgerManager> ledgerManager;
-  private static Microservice<PortfolioManager> portfolioManager;
-  private static Microservice<DepositAccountManager> depositAccountManager;
-  private static Microservice<TellerManager> tellerManager;
-  private static Microservice<ReportManager> reportManager;
-  private static Microservice<ChequeManager> chequeManager;
-  private static Microservice<PayrollManager> payrollManager;
-  private static Microservice<GroupManager> groupManager;
+ // private static Microservice<LedgerManager> ledgerManager;
+ // private static Microservice<PortfolioManager> portfolioManager;
+ // private static Microservice<DepositAccountManager> depositAccountManager;
+ // private static Microservice<TellerManager> tellerManager;
+  //private static Microservice<ReportManager> reportManager;
+  //private static Microservice<ChequeManager> chequeManager;
+  //private static Microservice<PayrollManager> payrollManager;
+ // private static Microservice<GroupManager> groupManager;
 
 
 
@@ -224,45 +224,45 @@ public class ServiceRunner {
     ServiceRunner.datamigrationManager = new Microservice<>(DatamigrationManager.class, "datamigration", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
     startService(generalProperties, datamigrationManager);
 
-    ServiceRunner.ledgerManager = new Microservice<>(LedgerManager.class, "accounting", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-    startService(generalProperties, ledgerManager);
+   // ServiceRunner.ledgerManager = new Microservice<>(LedgerManager.class, "accounting", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+    //startService(generalProperties, ledgerManager);
 
-    ServiceRunner.portfolioManager = new Microservice<>(PortfolioManager.class, "portfolio", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT)
-            .addProperties(new ExtraProperties() {{
-              setProperty("portfolio.bookLateFeesAndInterestAsUser", SCHEDULER_USER_NAME);
-            }});
-    startService(generalProperties, portfolioManager);
+    //ServiceRunner.portfolioManager = new Microservice<>(PortfolioManager.class, "portfolio", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT)
+         //   .addProperties(new ExtraProperties() {{
+           //   setProperty("portfolio.bookLateFeesAndInterestAsUser", SCHEDULER_USER_NAME);
+          //  }});
+    //startService(generalProperties, portfolioManager);
 
-    ServiceRunner.depositAccountManager = new Microservice<>(DepositAccountManager.class, "deposit-account-management", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-    startService(generalProperties, depositAccountManager);
+    //ServiceRunner.depositAccountManager = new Microservice<>(DepositAccountManager.class, "deposit-account-management", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+   // startService(generalProperties, depositAccountManager);
 
-    ServiceRunner.tellerManager = new Microservice<>(TellerManager.class, "teller", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-    startService(generalProperties, ServiceRunner.tellerManager);
+    //ServiceRunner.tellerManager = new Microservice<>(TellerManager.class, "teller", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+   // startService(generalProperties, ServiceRunner.tellerManager);
 
-    ServiceRunner.reportManager = new Microservice<>(ReportManager.class, "reporting", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-    startService(generalProperties, ServiceRunner.reportManager);
+   // ServiceRunner.reportManager = new Microservice<>(ReportManager.class, "reporting", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+   // startService(generalProperties, ServiceRunner.reportManager);
 
-    ServiceRunner.chequeManager = new Microservice<>(ChequeManager.class, "cheques", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-    startService(generalProperties, ServiceRunner.chequeManager);
+   // ServiceRunner.chequeManager = new Microservice<>(ChequeManager.class, "cheques", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+   // startService(generalProperties, ServiceRunner.chequeManager);
 
-    ServiceRunner.payrollManager = new Microservice<>(PayrollManager.class, "payroll", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-    startService(generalProperties, ServiceRunner.payrollManager);
+   // ServiceRunner.payrollManager = new Microservice<>(PayrollManager.class, "payroll", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+   // startService(generalProperties, ServiceRunner.payrollManager);
 
-    ServiceRunner.groupManager = new Microservice<>(GroupManager.class, "group", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-    startService(generalProperties, ServiceRunner.groupManager);
+    //ServiceRunner.groupManager = new Microservice<>(GroupManager.class, "group", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+   // startService(generalProperties, ServiceRunner.groupManager);
   }
 
   @After
   public void tearDown() throws Exception {
-    ServiceRunner.groupManager.kill();
-    ServiceRunner.payrollManager.kill();
-    ServiceRunner.chequeManager.kill();
-    ServiceRunner.reportManager.kill();
-    ServiceRunner.tellerManager.kill();
-    ServiceRunner.depositAccountManager.kill();
+   // ServiceRunner.groupManager.kill();
+   // ServiceRunner.payrollManager.kill();
+    //ServiceRunner.chequeManager.kill();
+   // ServiceRunner.reportManager.kill();
+   //ServiceRunner.tellerManager.kill();
+   // ServiceRunner.depositAccountManager.kill();
     ServiceRunner.rhythmManager.kill();
-    ServiceRunner.portfolioManager.kill();
-    ServiceRunner.ledgerManager.kill();
+    //ServiceRunner.portfolioManager.kill();
+   // ServiceRunner.ledgerManager.kill();
     ServiceRunner.customerManager.kill();
 
     ServiceRunner.datamigrationManager.kill();
@@ -295,14 +295,14 @@ public class ServiceRunner {
 
     System.out.println("Datamigration Service: " + ServiceRunner.datamigrationManager.getProcessEnvironment().serverURI());
 
-    System.out.println("Accounting Service: " + ServiceRunner.ledgerManager.getProcessEnvironment().serverURI());
-    System.out.println("Portfolio Service: " + ServiceRunner.portfolioManager.getProcessEnvironment().serverURI());
-    System.out.println("Deposit Service: " + ServiceRunner.depositAccountManager.getProcessEnvironment().serverURI());
-    System.out.println("Teller Service: " + ServiceRunner.tellerManager.getProcessEnvironment().serverURI());
-    System.out.println("Reporting Service: " + ServiceRunner.reportManager.getProcessEnvironment().serverURI());
-    System.out.println("Cheque Service: " + ServiceRunner.chequeManager.getProcessEnvironment().serverURI());
-    System.out.println("Payroll Service: " + ServiceRunner.payrollManager.getProcessEnvironment().serverURI());
-    System.out.println("Group Service: " + ServiceRunner.groupManager.getProcessEnvironment().serverURI());
+   // System.out.println("Accounting Service: " + ServiceRunner.ledgerManager.getProcessEnvironment().serverURI());
+    //System.out.println("Portfolio Service: " + ServiceRunner.portfolioManager.getProcessEnvironment().serverURI());
+   // System.out.println("Deposit Service: " + ServiceRunner.depositAccountManager.getProcessEnvironment().serverURI());
+    //System.out.println("Teller Service: " + ServiceRunner.tellerManager.getProcessEnvironment().serverURI());
+   // System.out.println("Reporting Service: " + ServiceRunner.reportManager.getProcessEnvironment().serverURI());
+   // System.out.println("Cheque Service: " + ServiceRunner.chequeManager.getProcessEnvironment().serverURI());
+  //  System.out.println("Payroll Service: " + ServiceRunner.payrollManager.getProcessEnvironment().serverURI());
+  //  System.out.println("Group Service: " + ServiceRunner.groupManager.getProcessEnvironment().serverURI());
 
     boolean run = true;
 
@@ -340,7 +340,7 @@ public class ServiceRunner {
           } else {
             ServiceRunner.provisionerService.api().assignApplications(tenant.getIdentifier(), Collections.singletonList(assignedApplication));
             try {
-              Thread.sleep(5000L);
+              Thread.sleep(500L);
             } catch (InterruptedException e) {
               //do nothing
             }
@@ -360,16 +360,16 @@ public class ServiceRunner {
         ApplicationBuilder.create(ServiceRunner.organizationManager.name(), ServiceRunner.organizationManager.uri()),
         ApplicationBuilder.create(ServiceRunner.customerManager.name(), ServiceRunner.customerManager.uri()),
 
-        ApplicationBuilder.create(ServiceRunner.datamigrationManager.name(), ServiceRunner.datamigrationManager.uri()),
+        ApplicationBuilder.create(ServiceRunner.datamigrationManager.name(), ServiceRunner.datamigrationManager.uri())
 
-        ApplicationBuilder.create(ServiceRunner.ledgerManager.name(), ServiceRunner.ledgerManager.uri()),
-        ApplicationBuilder.create(ServiceRunner.portfolioManager.name(), ServiceRunner.portfolioManager.uri()),
-        ApplicationBuilder.create(ServiceRunner.depositAccountManager.name(), ServiceRunner.depositAccountManager.uri()),
-        ApplicationBuilder.create(ServiceRunner.tellerManager.name(), ServiceRunner.tellerManager.uri()),
-        ApplicationBuilder.create(ServiceRunner.reportManager.name(), ServiceRunner.reportManager.uri()),
-        ApplicationBuilder.create(ServiceRunner.chequeManager.name(), ServiceRunner.chequeManager.uri()),
-        ApplicationBuilder.create(ServiceRunner.payrollManager.name(), ServiceRunner.payrollManager.uri()),
-        ApplicationBuilder.create(ServiceRunner.groupManager.name(), ServiceRunner.groupManager.uri())
+       // ApplicationBuilder.create(ServiceRunner.ledgerManager.name(), ServiceRunner.ledgerManager.uri()),
+        //ApplicationBuilder.create(ServiceRunner.portfolioManager.name(), ServiceRunner.portfolioManager.uri()),
+       // ApplicationBuilder.create(ServiceRunner.depositAccountManager.name(), ServiceRunner.depositAccountManager.uri()),
+       // ApplicationBuilder.create(ServiceRunner.tellerManager.name(), ServiceRunner.tellerManager.uri()),
+       // ApplicationBuilder.create(ServiceRunner.reportManager.name(), ServiceRunner.reportManager.uri()),
+       // ApplicationBuilder.create(ServiceRunner.chequeManager.name(), ServiceRunner.chequeManager.uri()),
+       // ApplicationBuilder.create(ServiceRunner.payrollManager.name(), ServiceRunner.payrollManager.uri()),
+      //  ApplicationBuilder.create(ServiceRunner.groupManager.name(), ServiceRunner.groupManager.uri())
     );
 
 
@@ -431,51 +431,51 @@ public class ServiceRunner {
 
       provisionApp(tenant, ServiceRunner.organizationManager, org.apache.fineract.cn.office.api.v1.EventConstants.INITIALIZE);
 
-      provisionApp(tenant, ledgerManager, org.apache.fineract.cn.accounting.api.v1.EventConstants.INITIALIZE);
+    //  provisionApp(tenant, ledgerManager, org.apache.fineract.cn.accounting.api.v1.EventConstants.INITIALIZE);
 
-      provisionApp(tenant, portfolioManager, org.apache.fineract.cn.portfolio.api.v1.events.EventConstants.INITIALIZE);
+    //  provisionApp(tenant, portfolioManager, org.apache.fineract.cn.portfolio.api.v1.events.EventConstants.INITIALIZE);
 
-      Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_PERMITTABLE_GROUP,
-              org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name())));
+     // Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_PERMITTABLE_GROUP,
+            //  org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name())));
 
-      for (int i = 0; i < 24; i++) {
-        Assert.assertTrue("Beat #" + i,
-                eventRecorder.wait(org.apache.fineract.cn.rhythm.api.v1.events.EventConstants.POST_BEAT,
-                        new BeatEvent(portfolioManager.name(), "alignment" + i)));
-      }
+     // for (int i = 0; i < 24; i++) {
+      //  Assert.assertTrue("Beat #" + i,
+                //eventRecorder.wait(org.apache.fineract.cn.rhythm.api.v1.events.EventConstants.POST_BEAT,
+                    //    new BeatEvent(portfolioManager.name(), "alignment" + i)));
+      //}
 
       final Authentication schedulerAuthentication;
       try (final AutoGuest ignored2 = new AutoGuest()) {
         schedulerAuthentication = identityManager.api().login(schedulerUser.getIdentifier(), schedulerUser.getPassword());
       }
 
-      try (final AutoUserContext ignored2 = new AutoUserContext(schedulerUser.getIdentifier(), schedulerAuthentication.getAccessToken())) {
-        //Allow rhythm to send a beat to portfolio as the scheduler user.
-        identityManager.api().setApplicationPermissionEnabledForUser(
-                rhythmManager.name(),
-                org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()),
-                schedulerUser.getIdentifier(),
-                true);
-        Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_PUT_APPLICATION_PERMISSION_USER_ENABLED,
-                new ApplicationPermissionUserEvent(rhythmManager.name(),
-                        org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()), schedulerUser.getIdentifier())));
-      }
+      //try (final AutoUserContext ignored2 = new AutoUserContext(schedulerUser.getIdentifier(), schedulerAuthentication.getAccessToken())) {
+       // //Allow rhythm to send a beat to portfolio as the scheduler user.
+        //identityManager.api().setApplicationPermissionEnabledForUser(
+            //    rhythmManager.name(),
+               // org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()),
+               // schedulerUser.getIdentifier(),
+              //  true);
+        //Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_PUT_APPLICATION_PERMISSION_USER_ENABLED,
+          //      new ApplicationPermissionUserEvent(rhythmManager.name(),
+          //              org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()), schedulerUser.getIdentifier())));
+     // }
 
       provisionApp(tenant, ServiceRunner.customerManager, CustomerEventConstants.INITIALIZE);
 
       provisionApp(tenant, ServiceRunner.datamigrationManager, DatamigrationEventConstants.INITIALIZE);
 
-      provisionApp(tenant, depositAccountManager, org.apache.fineract.cn.deposit.api.v1.EventConstants.INITIALIZE);
+     // provisionApp(tenant, depositAccountManager, org.apache.fineract.cn.deposit.api.v1.EventConstants.INITIALIZE);
 
-      provisionApp(tenant, ServiceRunner.tellerManager, org.apache.fineract.cn.teller.api.v1.EventConstants.INITIALIZE);
+     // provisionApp(tenant, ServiceRunner.tellerManager, org.apache.fineract.cn.teller.api.v1.EventConstants.INITIALIZE);
 
-      provisionApp(tenant, ServiceRunner.reportManager, org.apache.fineract.cn.reporting.api.v1.EventConstants.INITIALIZE);
+      //provisionApp(tenant, ServiceRunner.reportManager, org.apache.fineract.cn.reporting.api.v1.EventConstants.INITIALIZE);
 
-      provisionApp(tenant, ServiceRunner.chequeManager, org.apache.fineract.cn.cheque.api.v1.EventConstants.INITIALIZE);
+     // provisionApp(tenant, ServiceRunner.chequeManager, org.apache.fineract.cn.cheque.api.v1.EventConstants.INITIALIZE);
 
-      provisionApp(tenant, ServiceRunner.payrollManager, org.apache.fineract.cn.payroll.api.v1.EventConstants.INITIALIZE);
+      //provisionApp(tenant, ServiceRunner.payrollManager, org.apache.fineract.cn.payroll.api.v1.EventConstants.INITIALIZE);
 
-      provisionApp(tenant, ServiceRunner.groupManager, org.apache.fineract.cn.group.api.v1.EventConstants.INITIALIZE);
+     // provisionApp(tenant, ServiceRunner.groupManager, org.apache.fineract.cn.group.api.v1.EventConstants.INITIALIZE);
 
       final UserWithPassword orgAdminUserPassword = createOrgAdminRoleAndUser(tenantAdminPassword.getAdminPassword());
 
@@ -492,14 +492,14 @@ public class ServiceRunner {
     }
 
     try (final AutoUserContext ignored = new AutoUserContext(userWithPassword.getIdentifier(), authentication.getAccessToken())) {
-      final LedgerImporter ledgerImporter = new LedgerImporter(ledgerManager.api(), logger);
+     // final LedgerImporter ledgerImporter = new LedgerImporter(ledgerManager.api(), logger);
       final URL ledgersUrl = ServiceRunner.class.getResource("/standardChartOfAccounts/ledgers.csv");
-      ledgerImporter.importCSV(ledgersUrl);
+     // ledgerImporter.importCSV(ledgersUrl);
       Assert.assertTrue(this.eventRecorder.wait(POST_LEDGER, LOAN_INCOME_LEDGER));
 
-      final AccountImporter accountImporter = new AccountImporter(ledgerManager.api(), logger);
+     // final AccountImporter accountImporter = new AccountImporter(ledgerManager.api(), logger);
       final URL accountsUrl = ServiceRunner.class.getResource("/standardChartOfAccounts/accounts.csv");
-      accountImporter.importCSV(accountsUrl);
+    //  accountImporter.importCSV(accountsUrl);
       Assert.assertTrue(this.eventRecorder.wait(POST_ACCOUNT, "9330"));
 
       identityManager.api().logout();
@@ -556,7 +556,7 @@ public class ServiceRunner {
 
     final Permission beatPublishToPortfolioPermission = new Permission();
     beatPublishToPortfolioPermission.setAllowedOperations(Collections.singleton(AllowedOperation.CHANGE));
-    beatPublishToPortfolioPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()));
+   // beatPublishToPortfolioPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()));
 
     final Role role = new Role();
     role.setIdentifier("scheduler");

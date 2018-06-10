@@ -105,7 +105,8 @@ dependencies {
 
             [group: 'org.apache.fineract.cn.customer', name: 'api', version: versions.fineractcncustomer],
 
-            [group: 'org.apache.fineract.cn.datamigration', name: 'api', version: versions.fineractcndatamigration],
+            [group: 'org.apache.fineract.cn.datamigration', name: 'api', version: versions.fineractcndatamigration
+            ],
 
             [group: 'org.apache.fineract.cn.accounting', name: 'api', version: versions.fineractcnaccounting],
             [group: 'org.apache.fineract.cn.accounting', name: 'importer', version: versions.fineractcnaccounting],
