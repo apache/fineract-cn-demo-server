@@ -26,6 +26,7 @@ import org.apache.fineract.cn.accounting.importer.LedgerImporter;
 import org.apache.fineract.cn.anubis.api.v1.domain.AllowedOperation;
 import org.apache.fineract.cn.cheque.api.v1.client.ChequeManager;
 import org.apache.fineract.cn.cassandra.util.CassandraConnectorConstants;
+import org.apache.fineract.cn.datamigration.api.v1.PermittableGroupIds;
 import org.apache.fineract.cn.datamigration.api.v1.events.DatamigrationEventConstants;
 import org.apache.fineract.cn.mariadb.util.MariaDBConstants;
 import org.apache.fineract.cn.test.env.ExtraProperties;
@@ -340,7 +341,7 @@ public class ServiceRunner {
           } else {
             ServiceRunner.provisionerService.api().assignApplications(tenant.getIdentifier(), Collections.singletonList(assignedApplication));
             try {
-              Thread.sleep(5000L);
+              Thread.sleep(500L);
             } catch (InterruptedException e) {
               //do nothing
             }
@@ -621,17 +622,22 @@ public class ServiceRunner {
     accountManagementPermission.setAllowedOperations(AllowedOperation.ALL);
     accountManagementPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.accounting.api.v1.PermittableGroupIds.THOTH_ACCOUNT);
 
+    final Permission dataMigrationPermission = new Permission();
+    dataMigrationPermission.setAllowedOperations(AllowedOperation.ALL);
+    dataMigrationPermission.setPermittableEndpointGroupIdentifier(PermittableGroupIds.DATAMIGRATION_MANAGEMENT);
+
     final Role role = new Role();
     role.setIdentifier("orgadmin");
     role.setPermissions(
         Arrays.asList(
-            employeeAllPermission,
-            officeAllPermission,
-            userAllPermission,
-            roleAllPermission,
-            selfManagementPermission,
-            ledgerManagementPermission,
-            accountManagementPermission
+                employeeAllPermission,
+                officeAllPermission,
+                userAllPermission,
+                roleAllPermission,
+                selfManagementPermission,
+                ledgerManagementPermission,
+                accountManagementPermission,
+                dataMigrationPermission
         )
     );
 
