@@ -113,11 +113,11 @@ public class ServiceRunner {
 
   private static Microservice<LedgerManager> ledgerManager;
   private static Microservice<PortfolioManager> portfolioManager;
-  private static Microservice<DepositAccountManager> depositAccountManager;
-  private static Microservice<TellerManager> tellerManager;
-  private static Microservice<ReportManager> reportManager;
-  private static Microservice<ChequeManager> chequeManager;
-  private static Microservice<PayrollManager> payrollManager;
+  //private static Microservice<DepositAccountManager> depositAccountManager;
+ // private static Microservice<TellerManager> tellerManager;
+  //private static Microservice<ReportManager> reportManager;
+ // private static Microservice<ChequeManager> chequeManager;
+ //private static Microservice<PayrollManager> payrollManager;
   private static Microservice<GroupManager> groupManager;
 
 
@@ -225,7 +225,8 @@ public class ServiceRunner {
     ServiceRunner.datamigrationManager = new Microservice<>(DatamigrationManager.class, "datamigration", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
     startService(generalProperties, datamigrationManager);
 
-    ServiceRunner.ledgerManager = new Microservice<>(LedgerManager.class, "accounting", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+    ServiceRunner.ledgerManager = new Microservice<>(LedgerManager.class, "accounting", "0.1.0-BUILD-SNAPSHOT",
+          ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
     startService(generalProperties, ledgerManager);
 
     ServiceRunner.portfolioManager = new Microservice<>(PortfolioManager.class, "portfolio", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT)
@@ -233,7 +234,7 @@ public class ServiceRunner {
               setProperty("portfolio.bookLateFeesAndInterestAsUser", SCHEDULER_USER_NAME);
             }});
     startService(generalProperties, portfolioManager);
-
+/*
     ServiceRunner.depositAccountManager = new Microservice<>(DepositAccountManager.class, "deposit-account-management", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
     startService(generalProperties, depositAccountManager);
 
@@ -248,7 +249,7 @@ public class ServiceRunner {
 
     ServiceRunner.payrollManager = new Microservice<>(PayrollManager.class, "payroll", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
     startService(generalProperties, ServiceRunner.payrollManager);
-
+*/
     ServiceRunner.groupManager = new Microservice<>(GroupManager.class, "group", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
     startService(generalProperties, ServiceRunner.groupManager);
   }
@@ -256,11 +257,11 @@ public class ServiceRunner {
   @After
   public void tearDown() throws Exception {
     ServiceRunner.groupManager.kill();
-    ServiceRunner.payrollManager.kill();
+   /* ServiceRunner.payrollManager.kill();
     ServiceRunner.chequeManager.kill();
     ServiceRunner.reportManager.kill();
     ServiceRunner.tellerManager.kill();
-    ServiceRunner.depositAccountManager.kill();
+    ServiceRunner.depositAccountManager.kill();*/
     ServiceRunner.rhythmManager.kill();
     ServiceRunner.portfolioManager.kill();
     ServiceRunner.ledgerManager.kill();
@@ -298,13 +299,13 @@ public class ServiceRunner {
 
     System.out.println("Accounting Service: " + ServiceRunner.ledgerManager.getProcessEnvironment().serverURI());
     System.out.println("Portfolio Service: " + ServiceRunner.portfolioManager.getProcessEnvironment().serverURI());
-    System.out.println("Deposit Service: " + ServiceRunner.depositAccountManager.getProcessEnvironment().serverURI());
+  /*  System.out.println("Deposit Service: " + ServiceRunner.depositAccountManager.getProcessEnvironment().serverURI());
     System.out.println("Teller Service: " + ServiceRunner.tellerManager.getProcessEnvironment().serverURI());
     System.out.println("Reporting Service: " + ServiceRunner.reportManager.getProcessEnvironment().serverURI());
     System.out.println("Cheque Service: " + ServiceRunner.chequeManager.getProcessEnvironment().serverURI());
     System.out.println("Payroll Service: " + ServiceRunner.payrollManager.getProcessEnvironment().serverURI());
     System.out.println("Group Service: " + ServiceRunner.groupManager.getProcessEnvironment().serverURI());
-
+*/
     boolean run = true;
 
     while (run) {
@@ -365,11 +366,12 @@ public class ServiceRunner {
 
         ApplicationBuilder.create(ServiceRunner.ledgerManager.name(), ServiceRunner.ledgerManager.uri()),
         ApplicationBuilder.create(ServiceRunner.portfolioManager.name(), ServiceRunner.portfolioManager.uri()),
-        ApplicationBuilder.create(ServiceRunner.depositAccountManager.name(), ServiceRunner.depositAccountManager.uri()),
+       /* ApplicationBuilder.create(ServiceRunner.depositAccountManager.name(), ServiceRunner.depositAccountManager
+                                                                                                                                          .uri()),
         ApplicationBuilder.create(ServiceRunner.tellerManager.name(), ServiceRunner.tellerManager.uri()),
         ApplicationBuilder.create(ServiceRunner.reportManager.name(), ServiceRunner.reportManager.uri()),
         ApplicationBuilder.create(ServiceRunner.chequeManager.name(), ServiceRunner.chequeManager.uri()),
-        ApplicationBuilder.create(ServiceRunner.payrollManager.name(), ServiceRunner.payrollManager.uri()),
+        ApplicationBuilder.create(ServiceRunner.payrollManager.name(), ServiceRunner.payrollManager.uri()),*/
         ApplicationBuilder.create(ServiceRunner.groupManager.name(), ServiceRunner.groupManager.uri())
     );
 
@@ -466,7 +468,7 @@ public class ServiceRunner {
 
       provisionApp(tenant, ServiceRunner.datamigrationManager, DatamigrationEventConstants.INITIALIZE);
 
-      provisionApp(tenant, depositAccountManager, org.apache.fineract.cn.deposit.api.v1.EventConstants.INITIALIZE);
+    /*  provisionApp(tenant, depositAccountManager, org.apache.fineract.cn.deposit.api.v1.EventConstants.INITIALIZE);
 
       provisionApp(tenant, ServiceRunner.tellerManager, org.apache.fineract.cn.teller.api.v1.EventConstants.INITIALIZE);
 
@@ -475,6 +477,7 @@ public class ServiceRunner {
       provisionApp(tenant, ServiceRunner.chequeManager, org.apache.fineract.cn.cheque.api.v1.EventConstants.INITIALIZE);
 
       provisionApp(tenant, ServiceRunner.payrollManager, org.apache.fineract.cn.payroll.api.v1.EventConstants.INITIALIZE);
+      */
 
       provisionApp(tenant, ServiceRunner.groupManager, org.apache.fineract.cn.group.api.v1.EventConstants.INITIALIZE);
 
