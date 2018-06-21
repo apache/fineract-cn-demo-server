@@ -629,6 +629,10 @@ public class ServiceRunner {
     dataMigrationPermission.setAllowedOperations(AllowedOperation.ALL);
     dataMigrationPermission.setPermittableEndpointGroupIdentifier(PermittableGroupIds.DATAMIGRATION_MANAGEMENT);
 
+    final Permission customerPermission = new Permission();
+    customerPermission.setAllowedOperations(AllowedOperation.ALL);
+    customerPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.customer.PermittableGroupIds.CUSTOMER);
+
     final Role role = new Role();
     role.setIdentifier("orgadmin");
     role.setPermissions(
@@ -640,7 +644,8 @@ public class ServiceRunner {
                 selfManagementPermission,
                 ledgerManagementPermission,
                 accountManagementPermission,
-                dataMigrationPermission
+                dataMigrationPermission,
+                customerPermission
         )
     );
 
