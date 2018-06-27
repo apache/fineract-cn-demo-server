@@ -44,9 +44,7 @@ ext.versions = [
         fineractcnprovisioner   : '0.1.0-BUILD-SNAPSHOT',
         fineractcnrhythm        : '0.1.0-BUILD-SNAPSHOT',
         fineractcnoffice        : '0.1.0-BUILD-SNAPSHOT',
-
         fineractcndatamigration : '0.1.0-BUILD-SNAPSHOT',
-
         fineractcncustomer      : '0.1.0-BUILD-SNAPSHOT',
         fineractcnaccounting    : '0.1.0-BUILD-SNAPSHOT',
         fineractcnportfolio     : '0.1.0-BUILD-SNAPSHOT',

@@ -637,6 +637,10 @@ public class ServiceRunner {
     tellerPermission.setAllowedOperations(AllowedOperation.ALL);
     tellerPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.teller.api.v1.PermittableGroupIds.TELLER_MANAGEMENT);
 
+    final Permission groupPermission = new Permission();
+    tellerPermission.setAllowedOperations(AllowedOperation.ALL);
+    tellerPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.group.api.v1.PermittableGroupIds.GROUP);
+
     final Role role = new Role();
     role.setIdentifier("orgadmin");
     role.setPermissions(
@@ -650,7 +654,8 @@ public class ServiceRunner {
                 accountManagementPermission,
                 dataMigrationPermission,
                 customerPermission,
-                tellerPermission
+                tellerPermission,
+                groupPermission
         )
     );
 
