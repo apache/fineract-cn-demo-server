@@ -288,7 +288,7 @@ public class ServiceRunner {
       }
     }
     finally {
-      ServiceRunner.provisionerService.kill();
+     // ServiceRunner.provisionerService.kill();
     }
 
     System.out.println("Identity Service: " + ServiceRunner.identityManager.getProcessEnvironment().serverURI());
@@ -625,7 +625,7 @@ public class ServiceRunner {
     accountManagementPermission.setAllowedOperations(AllowedOperation.ALL);
     accountManagementPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.accounting.api.v1.PermittableGroupIds.THOTH_ACCOUNT);
 
-    final Permission dataMigrationPermission = new Permission();
+    /*final Permission dataMigrationPermission = new Permission();
     dataMigrationPermission.setAllowedOperations(AllowedOperation.ALL);
     dataMigrationPermission.setPermittableEndpointGroupIdentifier(PermittableGroupIds.DATAMIGRATION_MANAGEMENT);
 
@@ -640,7 +640,7 @@ public class ServiceRunner {
     final Permission groupPermission = new Permission();
     tellerPermission.setAllowedOperations(AllowedOperation.ALL);
     tellerPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.group.api.v1.PermittableGroupIds.GROUP);
-
+*/
     final Role role = new Role();
     role.setIdentifier("orgadmin");
     role.setPermissions(
@@ -651,11 +651,11 @@ public class ServiceRunner {
                 roleAllPermission,
                 selfManagementPermission,
                 ledgerManagementPermission,
-                accountManagementPermission,
-                dataMigrationPermission,
+                accountManagementPermission
+                /*dataMigrationPermission,
                 customerPermission,
                 tellerPermission,
-                groupPermission
+                groupPermission*/
         )
     );
 
