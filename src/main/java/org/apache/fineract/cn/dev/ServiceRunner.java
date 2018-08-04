@@ -290,7 +290,7 @@ public class ServiceRunner {
     finally {
      // ServiceRunner.provisionerService.kill();
     }
-
+    System.out.println("Provisioner Service: " + ServiceRunner.provisionerService.getProcessEnvironment().serverURI());
     System.out.println("Identity Service: " + ServiceRunner.identityManager.getProcessEnvironment().serverURI());
     System.out.println("Office Service: " + ServiceRunner.organizationManager.getProcessEnvironment().serverURI());
     System.out.println("Customer Service: " + ServiceRunner.customerManager.getProcessEnvironment().serverURI());
@@ -367,7 +367,7 @@ public class ServiceRunner {
         ApplicationBuilder.create(ServiceRunner.ledgerManager.name(), ServiceRunner.ledgerManager.uri()),
         ApplicationBuilder.create(ServiceRunner.portfolioManager.name(), ServiceRunner.portfolioManager.uri()),
        /* ApplicationBuilder.create(ServiceRunner.depositAccountManager.name(), ServiceRunner.depositAccountManager
-                                                                                                                                          .uri()),
+                                                                                                                                     .uri()),
         ApplicationBuilder.create(ServiceRunner.tellerManager.name(), ServiceRunner.tellerManager.uri()),
         ApplicationBuilder.create(ServiceRunner.reportManager.name(), ServiceRunner.reportManager.uri()),
         ApplicationBuilder.create(ServiceRunner.chequeManager.name(), ServiceRunner.chequeManager.uri()),
