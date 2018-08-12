@@ -243,8 +243,8 @@ git push origin develop
 TIMEOUT /T 5
 cd ..
 
-REM pull notification
-cd notification
+REM pull notifications
+cd notifications
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
