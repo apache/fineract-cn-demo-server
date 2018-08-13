@@ -611,8 +611,8 @@ public class ServiceRunner {
     accountManagementPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.accounting.api.v1.PermittableGroupIds.THOTH_ACCOUNT);
 
     final Permission notificationManagementPermission = new Permission();
-    accountManagementPermission.setAllowedOperations(AllowedOperation.ALL);
-    accountManagementPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.notification.api.v1.PermittableGroupIds.SELF_MANAGEMENT);
+    notificationManagementPermission.setAllowedOperations(AllowedOperation.ALL);
+    notificationManagementPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.notification.api.v1.PermittableGroupIds.SELF_MANAGEMENT);
 
     final Role role = new Role();
     role.setIdentifier("orgadmin");
@@ -625,7 +625,7 @@ public class ServiceRunner {
             selfManagementPermission,
             ledgerManagementPermission,
             accountManagementPermission,
-                notificationManagementPermission
+            notificationManagementPermission
         )
     );
 
