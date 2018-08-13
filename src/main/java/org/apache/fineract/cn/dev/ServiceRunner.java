@@ -108,17 +108,15 @@ public class ServiceRunner {
   private static Microservice<RhythmManager> rhythmManager;
   private static Microservice<OrganizationManager> organizationManager;
   private static Microservice<CustomerManager> customerManager;
-
-  private static Microservice<DatamigrationManager> datamigrationManager;
-
   private static Microservice<LedgerManager> ledgerManager;
   private static Microservice<PortfolioManager> portfolioManager;
-  //private static Microservice<DepositAccountManager> depositAccountManager;
- // private static Microservice<TellerManager> tellerManager;
-  //private static Microservice<ReportManager> reportManager;
- // private static Microservice<ChequeManager> chequeManager;
- //private static Microservice<PayrollManager> payrollManager;
+  private static Microservice<DepositAccountManager> depositAccountManager;
+  private static Microservice<TellerManager> tellerManager;
+  private static Microservice<ReportManager> reportManager;
+  private static Microservice<ChequeManager> chequeManager;
+  private static Microservice<PayrollManager> payrollManager;
   private static Microservice<GroupManager> groupManager;
+  private static Microservice<DatamigrationManager> datamigrationManager;
 
 
 
@@ -222,9 +220,6 @@ public class ServiceRunner {
     ServiceRunner.customerManager = new Microservice<>(CustomerManager.class, "customer", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
     startService(generalProperties, customerManager);
 
-    ServiceRunner.datamigrationManager = new Microservice<>(DatamigrationManager.class, "datamigration", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-    startService(generalProperties, datamigrationManager);
-
     ServiceRunner.ledgerManager = new Microservice<>(LedgerManager.class, "accounting", "0.1.0-BUILD-SNAPSHOT",
           ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
     startService(generalProperties, ledgerManager);
@@ -234,7 +229,7 @@ public class ServiceRunner {
               setProperty("portfolio.bookLateFeesAndInterestAsUser", SCHEDULER_USER_NAME);
             }});
     startService(generalProperties, portfolioManager);
-/*
+
     ServiceRunner.depositAccountManager = new Microservice<>(DepositAccountManager.class, "deposit-account-management", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
     startService(generalProperties, depositAccountManager);
 
@@ -249,28 +244,29 @@ public class ServiceRunner {
 
     ServiceRunner.payrollManager = new Microservice<>(PayrollManager.class, "payroll", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
     startService(generalProperties, ServiceRunner.payrollManager);
-*/
+
     ServiceRunner.groupManager = new Microservice<>(GroupManager.class, "group", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
     startService(generalProperties, ServiceRunner.groupManager);
+
+    ServiceRunner.datamigrationManager = new Microservice<>(DatamigrationManager.class, "datamigration", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+    startService(generalProperties, datamigrationManager);
   }
 
   @After
   public void tearDown() throws Exception {
     ServiceRunner.groupManager.kill();
-   /* ServiceRunner.payrollManager.kill();
+    ServiceRunner.payrollManager.kill();
     ServiceRunner.chequeManager.kill();
     ServiceRunner.reportManager.kill();
     ServiceRunner.tellerManager.kill();
-    ServiceRunner.depositAccountManager.kill();*/
+    ServiceRunner.depositAccountManager.kill();
     ServiceRunner.rhythmManager.kill();
     ServiceRunner.portfolioManager.kill();
     ServiceRunner.ledgerManager.kill();
     ServiceRunner.customerManager.kill();
-
-    ServiceRunner.datamigrationManager.kill();
-
     ServiceRunner.organizationManager.kill();
     ServiceRunner.identityManager.kill();
+    ServiceRunner.datamigrationManager.kill();
 
     if (!isPersistent) {
       ServiceRunner.embeddedMariaDb.stop();
@@ -294,18 +290,16 @@ public class ServiceRunner {
     System.out.println("Identity Service: " + ServiceRunner.identityManager.getProcessEnvironment().serverURI());
     System.out.println("Office Service: " + ServiceRunner.organizationManager.getProcessEnvironment().serverURI());
     System.out.println("Customer Service: " + ServiceRunner.customerManager.getProcessEnvironment().serverURI());
-
-    System.out.println("Datamigration Service: " + ServiceRunner.datamigrationManager.getProcessEnvironment().serverURI());
-
     System.out.println("Accounting Service: " + ServiceRunner.ledgerManager.getProcessEnvironment().serverURI());
     System.out.println("Portfolio Service: " + ServiceRunner.portfolioManager.getProcessEnvironment().serverURI());
-  /*  System.out.println("Deposit Service: " + ServiceRunner.depositAccountManager.getProcessEnvironment().serverURI());
+    System.out.println("Deposit Service: " + ServiceRunner.depositAccountManager.getProcessEnvironment().serverURI());
     System.out.println("Teller Service: " + ServiceRunner.tellerManager.getProcessEnvironment().serverURI());
     System.out.println("Reporting Service: " + ServiceRunner.reportManager.getProcessEnvironment().serverURI());
     System.out.println("Cheque Service: " + ServiceRunner.chequeManager.getProcessEnvironment().serverURI());
     System.out.println("Payroll Service: " + ServiceRunner.payrollManager.getProcessEnvironment().serverURI());
     System.out.println("Group Service: " + ServiceRunner.groupManager.getProcessEnvironment().serverURI());
-*/
+    System.out.println("Data Migration Service: " + ServiceRunner.datamigrationManager.getProcessEnvironment().serverURI());
+
     boolean run = true;
 
     while (run) {
@@ -361,18 +355,15 @@ public class ServiceRunner {
         ApplicationBuilder.create(ServiceRunner.rhythmManager.name(), ServiceRunner.rhythmManager.uri()),
         ApplicationBuilder.create(ServiceRunner.organizationManager.name(), ServiceRunner.organizationManager.uri()),
         ApplicationBuilder.create(ServiceRunner.customerManager.name(), ServiceRunner.customerManager.uri()),
-
-        ApplicationBuilder.create(ServiceRunner.datamigrationManager.name(), ServiceRunner.datamigrationManager.uri()),
-
         ApplicationBuilder.create(ServiceRunner.ledgerManager.name(), ServiceRunner.ledgerManager.uri()),
         ApplicationBuilder.create(ServiceRunner.portfolioManager.name(), ServiceRunner.portfolioManager.uri()),
-       /* ApplicationBuilder.create(ServiceRunner.depositAccountManager.name(), ServiceRunner.depositAccountManager
-                                                                                                                                     .uri()),
+        ApplicationBuilder.create(ServiceRunner.depositAccountManager.name(), ServiceRunner.depositAccountManager.uri()),
         ApplicationBuilder.create(ServiceRunner.tellerManager.name(), ServiceRunner.tellerManager.uri()),
         ApplicationBuilder.create(ServiceRunner.reportManager.name(), ServiceRunner.reportManager.uri()),
         ApplicationBuilder.create(ServiceRunner.chequeManager.name(), ServiceRunner.chequeManager.uri()),
-        ApplicationBuilder.create(ServiceRunner.payrollManager.name(), ServiceRunner.payrollManager.uri()),*/
-        ApplicationBuilder.create(ServiceRunner.groupManager.name(), ServiceRunner.groupManager.uri())
+        ApplicationBuilder.create(ServiceRunner.payrollManager.name(), ServiceRunner.payrollManager.uri()),
+        ApplicationBuilder.create(ServiceRunner.groupManager.name(), ServiceRunner.groupManager.uri()),
+        ApplicationBuilder.create(ServiceRunner.datamigrationManager.name(), ServiceRunner.datamigrationManager.uri())
     );
 
 
@@ -466,9 +457,7 @@ public class ServiceRunner {
 
       provisionApp(tenant, ServiceRunner.customerManager, CustomerEventConstants.INITIALIZE);
 
-      provisionApp(tenant, ServiceRunner.datamigrationManager, DatamigrationEventConstants.INITIALIZE);
-
-    /*  provisionApp(tenant, depositAccountManager, org.apache.fineract.cn.deposit.api.v1.EventConstants.INITIALIZE);
+      provisionApp(tenant, depositAccountManager, org.apache.fineract.cn.deposit.api.v1.EventConstants.INITIALIZE);
 
       provisionApp(tenant, ServiceRunner.tellerManager, org.apache.fineract.cn.teller.api.v1.EventConstants.INITIALIZE);
 
@@ -477,9 +466,10 @@ public class ServiceRunner {
       provisionApp(tenant, ServiceRunner.chequeManager, org.apache.fineract.cn.cheque.api.v1.EventConstants.INITIALIZE);
 
       provisionApp(tenant, ServiceRunner.payrollManager, org.apache.fineract.cn.payroll.api.v1.EventConstants.INITIALIZE);
-      */
 
       provisionApp(tenant, ServiceRunner.groupManager, org.apache.fineract.cn.group.api.v1.EventConstants.INITIALIZE);
+
+      provisionApp(tenant, ServiceRunner.datamigrationManager, DatamigrationEventConstants.INITIALIZE);
 
       final UserWithPassword orgAdminUserPassword = createOrgAdminRoleAndUser(tenantAdminPassword.getAdminPassword());
 
@@ -624,23 +614,7 @@ public class ServiceRunner {
     final Permission accountManagementPermission = new Permission();
     accountManagementPermission.setAllowedOperations(AllowedOperation.ALL);
     accountManagementPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.accounting.api.v1.PermittableGroupIds.THOTH_ACCOUNT);
-
-    /*final Permission dataMigrationPermission = new Permission();
-    dataMigrationPermission.setAllowedOperations(AllowedOperation.ALL);
-    dataMigrationPermission.setPermittableEndpointGroupIdentifier(PermittableGroupIds.DATAMIGRATION_MANAGEMENT);
-
-    final Permission customerPermission = new Permission();
-    customerPermission.setAllowedOperations(AllowedOperation.ALL);
-    customerPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.customer.PermittableGroupIds.CUSTOMER);
-
-    final Permission tellerPermission = new Permission();
-    tellerPermission.setAllowedOperations(AllowedOperation.ALL);
-    tellerPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.teller.api.v1.PermittableGroupIds.TELLER_MANAGEMENT);
-
-    final Permission groupPermission = new Permission();
-    tellerPermission.setAllowedOperations(AllowedOperation.ALL);
-    tellerPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.group.api.v1.PermittableGroupIds.GROUP);
-*/
+    
     final Role role = new Role();
     role.setIdentifier("orgadmin");
     role.setPermissions(
@@ -652,10 +626,6 @@ public class ServiceRunner {
                 selfManagementPermission,
                 ledgerManagementPermission,
                 accountManagementPermission
-                /*dataMigrationPermission,
-                customerPermission,
-                tellerPermission,
-                groupPermission*/
         )
     );
 
