@@ -610,6 +610,10 @@ public class ServiceRunner {
     accountManagementPermission.setAllowedOperations(AllowedOperation.ALL);
     accountManagementPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.accounting.api.v1.PermittableGroupIds.THOTH_ACCOUNT);
 
+    final Permission customerManagementPermission = new Permission();
+    customerManagementPermission.setAllowedOperations(AllowedOperation.ALL);
+    customerManagementPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.customer.PermittableGroupIds.CUSTOMER);
+
     final Permission notificationManagementPermission = new Permission();
     notificationManagementPermission.setAllowedOperations(AllowedOperation.ALL);
     notificationManagementPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.notification.api.v1.PermittableGroupIds.SELF_MANAGEMENT);
@@ -625,6 +629,7 @@ public class ServiceRunner {
             selfManagementPermission,
             ledgerManagementPermission,
             accountManagementPermission,
+            customerManagementPermission,
             notificationManagementPermission
         )
     );
