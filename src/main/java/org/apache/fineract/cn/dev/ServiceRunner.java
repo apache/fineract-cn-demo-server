@@ -99,6 +99,11 @@ public class ServiceRunner {
   private static final String TEST_LOGGER = "test-logger";
   private static final String LOAN_INCOME_LEDGER = "1100";
 
+  //Notification User Details
+  private static final String USER_PASSWORD = "shingi";
+  private static final String NOTIFICATION_ROLE = "notificationAdmin";
+  private static final String USER_IDENTIFIER = "wadaadmin";
+
   private static Microservice<Provisioner> provisionerService;
   private static Microservice<IdentityManager> identityManager;
   private static Microservice<RhythmManager> rhythmManager;
@@ -634,6 +639,67 @@ public class ServiceRunner {
         )
     );
 
+    return role;
+  }
+
+  private UserWithPassword createNotificationsAdmin(final String tenantAdminPassword) throws InterruptedException {
+    final Authentication adminAuthentication;
+    try (final AutoUserContext ignored = new AutoGuest()) {
+      adminAuthentication = ServiceRunner.identityManager.api().login(ADMIN_USER_NAME, tenantAdminPassword);
+    }
+
+    try (final AutoUserContext ignored = new AutoUserContext(ADMIN_USER_NAME, adminAuthentication.getAccessToken())) {
+      final Role notificationRole = defineNotificationRole();
+
+      ServiceRunner.identityManager.api().createRole(notificationRole);
+      Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_ROLE, notificationRole.getIdentifier()));
+
+      final UserWithPassword notificationUser = new UserWithPassword();
+      notificationUser.setIdentifier(USER_IDENTIFIER);
+      notificationUser.setPassword(Base64Utils.encodeToString(USER_PASSWORD.getBytes()));
+      notificationUser.setRole(notificationRole.getIdentifier());
+
+      ServiceRunner.identityManager.api().createUser(notificationUser);
+      Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_USER, notificationUser.getIdentifier()));
+
+      ServiceRunner.identityManager.api().logout();
+
+      enableUser(notificationUser);
+      return notificationUser;
+    }
+  }
+
+  private Role defineNotificationRole() {
+    final Permission customerPermission = new Permission();
+    customerPermission.setAllowedOperations(Collections.singleton(AllowedOperation.READ));
+    customerPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.customer.PermittableGroupIds.CUSTOMER);
+
+    final Permission employeeAllPermission = new Permission();
+    employeeAllPermission.setAllowedOperations(AllowedOperation.ALL);
+    employeeAllPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.office.api.v1.PermittableGroupIds.EMPLOYEE_MANAGEMENT);
+
+    final Permission ledgerManagementPermission = new Permission();
+    ledgerManagementPermission.setAllowedOperations(AllowedOperation.ALL);
+    ledgerManagementPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.accounting.api.v1.PermittableGroupIds.THOTH_LEDGER);
+
+    final Permission accountManagementPermission = new Permission();
+    accountManagementPermission.setAllowedOperations(AllowedOperation.ALL);
+    accountManagementPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.accounting.api.v1.PermittableGroupIds.THOTH_ACCOUNT);
+
+    final Permission notificationManagementPermission = new Permission();
+    accountManagementPermission.setAllowedOperations(AllowedOperation.ALL);
+    accountManagementPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.notification.api.v1.PermittableGroupIds.SELF_MANAGEMENT);
+
+    final Role role = new Role();
+    role.setIdentifier(NOTIFICATION_ROLE);
+    role.setPermissions(Arrays.asList(
+            employeeAllPermission,
+            customerPermission,
+            ledgerManagementPermission,
+            accountManagementPermission,
+            notificationManagementPermission
+            )
+    );
     return role;
   }
 
