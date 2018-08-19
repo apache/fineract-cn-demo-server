@@ -472,6 +472,8 @@ public class ServiceRunner {
       provisionApp(tenant, ServiceRunner.notificationManager, org.apache.fineract.cn.notification.api.v1.events.NotificationEventConstants.INITIALIZE);
 
       final UserWithPassword orgAdminUserPassword = createOrgAdminRoleAndUser(tenantAdminPassword.getAdminPassword());
+      
+      createNotificationsAdmin(tenantAdminPassword.getAdminPassword());
 
       createChartOfAccounts(orgAdminUserPassword);
 
