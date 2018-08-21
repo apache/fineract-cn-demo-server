@@ -46,7 +46,7 @@ get_modules fineract-cn-crypto
 
 get_modules fineract-cn-anubis fineract-cn-identity fineract-cn-permitted-feign-client fineract-cn-provisioner fineract-cn-rhythm \
 fineract-cn-template fineract-cn-office fineract-cn-customer fineract-cn-group fineract-cn-accounting \
-fineract-cn-portfolio fineract-cn-deposit-account-management fineract-cn-cheques fineract-cn-payroll fineract-cn-teller fineract-cn-reporting
+fineract-cn-portfolio fineract-cn-deposit-account-management fineract-cn-cheques fineract-cn-payroll fineract-cn-teller fineract-cn-reporting fineract-cn-notifications
 
 (
 cd integration-tests
