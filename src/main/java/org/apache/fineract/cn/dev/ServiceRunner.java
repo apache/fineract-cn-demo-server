@@ -24,16 +24,14 @@ import org.apache.fineract.cn.accounting.api.v1.client.LedgerManager;
 import org.apache.fineract.cn.accounting.importer.AccountImporter;
 import org.apache.fineract.cn.accounting.importer.LedgerImporter;
 import org.apache.fineract.cn.anubis.api.v1.domain.AllowedOperation;
-import org.apache.fineract.cn.cheque.api.v1.client.ChequeManager;
+import org.apache.fineract.cn.api.config.EnableApiFactory;
+import org.apache.fineract.cn.api.context.AutoGuest;
+import org.apache.fineract.cn.api.context.AutoSeshat;
+import org.apache.fineract.cn.api.context.AutoUserContext;
+import org.apache.fineract.cn.api.util.ApiConstants;
+import org.apache.fineract.cn.api.util.ApiFactory;
 import org.apache.fineract.cn.cassandra.util.CassandraConnectorConstants;
-import org.apache.fineract.cn.mariadb.util.MariaDBConstants;
-import org.apache.fineract.cn.test.env.ExtraProperties;
-import org.apache.fineract.cn.test.listener.EnableEventRecording;
-import org.apache.fineract.cn.test.listener.EventRecorder;
-import org.apache.fineract.cn.test.servicestarter.ActiveMQForTest;
-import org.apache.fineract.cn.test.servicestarter.EurekaForTest;
-import org.apache.fineract.cn.test.servicestarter.IntegrationTestEnvironment;
-import org.apache.fineract.cn.test.servicestarter.Microservice;
+import org.apache.fineract.cn.cheque.api.v1.client.ChequeManager;
 import org.apache.fineract.cn.customer.api.v1.CustomerEventConstants;
 import org.apache.fineract.cn.customer.api.v1.client.CustomerManager;
 import org.apache.fineract.cn.deposit.api.v1.client.DepositAccountManager;
@@ -44,6 +42,9 @@ import org.apache.fineract.cn.identity.api.v1.events.ApplicationPermissionEvent;
 import org.apache.fineract.cn.identity.api.v1.events.ApplicationPermissionUserEvent;
 import org.apache.fineract.cn.identity.api.v1.events.ApplicationSignatureEvent;
 import org.apache.fineract.cn.identity.api.v1.events.EventConstants;
+import org.apache.fineract.cn.lang.AutoTenantContext;
+import org.apache.fineract.cn.mariadb.util.MariaDBConstants;
+import org.apache.fineract.cn.notification.api.v1.client.NotificationManager;
 import org.apache.fineract.cn.office.api.v1.client.OrganizationManager;
 import org.apache.fineract.cn.payroll.api.v1.client.PayrollManager;
 import org.apache.fineract.cn.portfolio.api.v1.client.PortfolioManager;
@@ -53,13 +54,13 @@ import org.apache.fineract.cn.reporting.api.v1.client.ReportManager;
 import org.apache.fineract.cn.rhythm.api.v1.client.RhythmManager;
 import org.apache.fineract.cn.rhythm.api.v1.events.BeatEvent;
 import org.apache.fineract.cn.teller.api.v1.client.TellerManager;
-import org.apache.fineract.cn.api.config.EnableApiFactory;
-import org.apache.fineract.cn.api.context.AutoGuest;
-import org.apache.fineract.cn.api.context.AutoSeshat;
-import org.apache.fineract.cn.api.context.AutoUserContext;
-import org.apache.fineract.cn.api.util.ApiConstants;
-import org.apache.fineract.cn.api.util.ApiFactory;
-import org.apache.fineract.cn.lang.AutoTenantContext;
+import org.apache.fineract.cn.test.env.ExtraProperties;
+import org.apache.fineract.cn.test.listener.EnableEventRecording;
+import org.apache.fineract.cn.test.listener.EventRecorder;
+import org.apache.fineract.cn.test.servicestarter.ActiveMQForTest;
+import org.apache.fineract.cn.test.servicestarter.EurekaForTest;
+import org.apache.fineract.cn.test.servicestarter.IntegrationTestEnvironment;
+import org.apache.fineract.cn.test.servicestarter.Microservice;
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.junit.*;
@@ -97,7 +98,11 @@ public class ServiceRunner {
   private static final String ADMIN_USER_NAME = "antony";
   private static final String TEST_LOGGER = "test-logger";
   private static final String LOAN_INCOME_LEDGER = "1100";
-
+  
+  private static final String NOTIFICATION_USER_PASSWORD = "shingi";
+  private static final String NOTIFICATION_ROLE = "notificationAdmin";
+  private static final String NOTIFICATION_USER_IDENTIFIER = "wadaadmin";
+  
   private static Microservice<Provisioner> provisionerService;
   private static Microservice<IdentityManager> identityManager;
   private static Microservice<RhythmManager> rhythmManager;
@@ -111,8 +116,9 @@ public class ServiceRunner {
   private static Microservice<ChequeManager> chequeManager;
   private static Microservice<PayrollManager> payrollManager;
   private static Microservice<GroupManager> groupManager;
-
-
+  private static Microservice<NotificationManager> notificationManager;
+  
+  
   private static DB embeddedMariaDb;
 
   private static final String CUSTOM_PROP_PREFIX = "custom.";
@@ -239,10 +245,14 @@ public class ServiceRunner {
 
     ServiceRunner.groupManager = new Microservice<>(GroupManager.class, "group", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
     startService(generalProperties, ServiceRunner.groupManager);
+  
+    ServiceRunner.notificationManager = new Microservice<>(NotificationManager.class, "notification", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+    startService(generalProperties, ServiceRunner.notificationManager);
   }
 
   @After
   public void tearDown() throws Exception {
+    ServiceRunner.notificationManager.kill();
     ServiceRunner.groupManager.kill();
     ServiceRunner.payrollManager.kill();
     ServiceRunner.chequeManager.kill();
@@ -286,6 +296,7 @@ public class ServiceRunner {
     System.out.println("Cheque Service: " + ServiceRunner.chequeManager.getProcessEnvironment().serverURI());
     System.out.println("Payroll Service: " + ServiceRunner.payrollManager.getProcessEnvironment().serverURI());
     System.out.println("Group Service: " + ServiceRunner.groupManager.getProcessEnvironment().serverURI());
+    System.out.println("Notification Service: " + ServiceRunner.notificationManager.getProcessEnvironment().serverURI());
 
     boolean run = true;
 
@@ -349,7 +360,8 @@ public class ServiceRunner {
         ApplicationBuilder.create(ServiceRunner.reportManager.name(), ServiceRunner.reportManager.uri()),
         ApplicationBuilder.create(ServiceRunner.chequeManager.name(), ServiceRunner.chequeManager.uri()),
         ApplicationBuilder.create(ServiceRunner.payrollManager.name(), ServiceRunner.payrollManager.uri()),
-        ApplicationBuilder.create(ServiceRunner.groupManager.name(), ServiceRunner.groupManager.uri())
+        ApplicationBuilder.create(ServiceRunner.groupManager.name(), ServiceRunner.groupManager.uri()),
+        ApplicationBuilder.create(ServiceRunner.notificationManager.name(), ServiceRunner.notificationManager.uri())
     );
 
 
@@ -454,9 +466,13 @@ public class ServiceRunner {
       provisionApp(tenant, ServiceRunner.payrollManager, org.apache.fineract.cn.payroll.api.v1.EventConstants.INITIALIZE);
 
       provisionApp(tenant, ServiceRunner.groupManager, org.apache.fineract.cn.group.api.v1.EventConstants.INITIALIZE);
-
+  
+      provisionApp(tenant, ServiceRunner.notificationManager, org.apache.fineract.cn.notification.api.v1.events.NotificationEventConstants.INITIALIZE);
+  
       final UserWithPassword orgAdminUserPassword = createOrgAdminRoleAndUser(tenantAdminPassword.getAdminPassword());
-
+  
+      createNotificationsAdmin(tenantAdminPassword.getAdminPassword());
+  
       createChartOfAccounts(orgAdminUserPassword);
 
       return tenantAdminPassword.getAdminPassword();
@@ -613,6 +629,47 @@ public class ServiceRunner {
         )
     );
 
+    return role;
+  }
+  
+  private UserWithPassword createNotificationsAdmin(final String tenantAdminPassword) throws InterruptedException {
+    final Authentication adminAuthentication;
+    try (final AutoUserContext ignored = new AutoGuest()) {
+      adminAuthentication = ServiceRunner.identityManager.api().login(ADMIN_USER_NAME, tenantAdminPassword);
+    }
+    
+    try (final AutoUserContext ignored = new AutoUserContext(ADMIN_USER_NAME, adminAuthentication.getAccessToken())) {
+      final Role notificationRole = defineNotificationRole();
+      
+      ServiceRunner.identityManager.api().createRole(notificationRole);
+      Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_ROLE, notificationRole.getIdentifier()));
+      
+      final UserWithPassword notificationUser = new UserWithPassword();
+      notificationUser.setIdentifier(NOTIFICATION_USER_IDENTIFIER);
+      notificationUser.setPassword(Base64Utils.encodeToString(NOTIFICATION_USER_PASSWORD.getBytes()));
+      notificationUser.setRole(notificationRole.getIdentifier());
+      
+      ServiceRunner.identityManager.api().createUser(notificationUser);
+      Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_USER, notificationUser.getIdentifier()));
+      
+      ServiceRunner.identityManager.api().logout();
+      
+      enableUser(notificationUser);
+      return notificationUser;
+    }
+  }
+  
+  private Role defineNotificationRole() {
+    final Permission customerPermission = new Permission();
+    customerPermission.setAllowedOperations(Collections.singleton(AllowedOperation.READ));
+    customerPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.customer.PermittableGroupIds.CUSTOMER);
+    
+    final Role role = new Role();
+    role.setIdentifier(NOTIFICATION_ROLE);
+    role.setPermissions(Arrays.asList(
+        customerPermission
+        )
+    );
     return role;
   }
 
