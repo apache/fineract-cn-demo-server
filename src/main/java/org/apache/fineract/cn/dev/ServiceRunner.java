@@ -611,10 +611,11 @@ public class ServiceRunner {
     ledgerManagementPermission.setAllowedOperations(AllowedOperation.ALL);
     ledgerManagementPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.accounting.api.v1.PermittableGroupIds.THOTH_LEDGER);
 
-    final Permission accountManagementPermission = new Permission();
+       final Permission accountManagementPermission = new Permission();
     accountManagementPermission.setAllowedOperations(AllowedOperation.ALL);
     accountManagementPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.accounting.api.v1.PermittableGroupIds.THOTH_ACCOUNT);
     
+
     final Role role = new Role();
     role.setIdentifier("orgadmin");
     role.setPermissions(
