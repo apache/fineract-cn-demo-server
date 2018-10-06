@@ -116,6 +116,7 @@ public class ServiceRunner {
   private static DB embeddedMariaDb;
 
   private static final String CUSTOM_PROP_PREFIX = "custom.";
+  private boolean runInDebug;
 
   @Configuration
   @ActiveMQForTest.EnableActiveMQListen
@@ -170,6 +171,7 @@ public class ServiceRunner {
   {
     this.isPersistent = this.environment.containsProperty("demoserver.persistent");
     this.shouldProvision = this.environment.containsProperty("demoserver.provision");
+    this.runInDebug = this.environment.containsProperty("demoserver.runInDebug");
 
     if (!this.isPersistent) {
       // start embedded Cassandra
@@ -275,17 +277,17 @@ public class ServiceRunner {
       ServiceRunner.provisionerService.kill();
     }
 
-    System.out.println("Identity Service: " + ServiceRunner.identityManager.getProcessEnvironment().serverURI());
-    System.out.println("Office Service: " + ServiceRunner.organizationManager.getProcessEnvironment().serverURI());
-    System.out.println("Customer Service: " + ServiceRunner.customerManager.getProcessEnvironment().serverURI());
-    System.out.println("Accounting Service: " + ServiceRunner.ledgerManager.getProcessEnvironment().serverURI());
-    System.out.println("Portfolio Service: " + ServiceRunner.portfolioManager.getProcessEnvironment().serverURI());
-    System.out.println("Deposit Service: " + ServiceRunner.depositAccountManager.getProcessEnvironment().serverURI());
-    System.out.println("Teller Service: " + ServiceRunner.tellerManager.getProcessEnvironment().serverURI());
-    System.out.println("Reporting Service: " + ServiceRunner.reportManager.getProcessEnvironment().serverURI());
-    System.out.println("Cheque Service: " + ServiceRunner.chequeManager.getProcessEnvironment().serverURI());
-    System.out.println("Payroll Service: " + ServiceRunner.payrollManager.getProcessEnvironment().serverURI());
-    System.out.println("Group Service: " + ServiceRunner.groupManager.getProcessEnvironment().serverURI());
+    System.out.println(identityManager.toString());
+    System.out.println(organizationManager.toString());
+    System.out.println(customerManager.toString());
+    System.out.println(ledgerManager.toString());
+    System.out.println(portfolioManager.toString());
+    System.out.println(depositAccountManager.toString());
+    System.out.println(tellerManager.toString());
+    System.out.println(reportManager.toString());
+    System.out.println(chequeManager.toString());
+    System.out.println(payrollManager.toString());
+    System.out.println(groupManager.toString());
 
     boolean run = true;
 
@@ -300,10 +302,16 @@ public class ServiceRunner {
   }
 
   private void startService(ExtraProperties properties, Microservice microservice) throws InterruptedException, IOException, ArtifactResolutionException {
+    if (this.runInDebug) {
+      microservice.runInDebug();
+    }
     microservice.addProperties(properties);
     microservice.start();
     final boolean registered = microservice.waitTillRegistered(discoveryClient);
     logger.info("Service '{}' started and {} with Eureka.", microservice.name(), registered ? "registered" : "not registered");
+    if (this.runInDebug) {
+      logger.info("Service '{}' started with debug port {}.", microservice.name(), microservice.debuggingPort());
+    }
     microservice.setApiFactory(this.apiFactory);
 
     TimeUnit.SECONDS.sleep(20); //Give it some extra time before the next service...
