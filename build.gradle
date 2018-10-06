@@ -53,6 +53,7 @@ ext.versions = [
         kuelapcheques           : '0.1.0-BUILD-SNAPSHOT',
         fineractcnpayroll       : '0.1.0-BUILD-SNAPSHOT',
         fineractcngroup         : '0.1.0-BUILD-SNAPSHOT',
+        fineractcnnotification  : '0.1.0-BUILD-SNAPSHOT',
         frameworkapi            : '0.1.0-BUILD-SNAPSHOT',
         frameworklang           : '0.1.0-BUILD-SNAPSHOT',
         frameworktest           : '0.1.0-BUILD-SNAPSHOT',
@@ -110,6 +111,7 @@ dependencies {
             [group: 'org.apache.fineract.cn.cheques', name: 'api', version: versions.kuelapcheques],
             [group: 'org.apache.fineract.cn.payroll', name: 'api', version: versions.fineractcnpayroll],
             [group: 'org.apache.fineract.cn.group', name: 'api', version: versions.fineractcngroup],
+            [group: 'org.apache.fineract.cn.notification', name: 'api', version: versions.fineractcnnotification],
 
             [group: 'org.apache.fineract.cn.anubis', name: 'api', version: versions.frameworkanubis],
             [group: 'org.apache.fineract.cn.anubis', name: 'test', version: versions.frameworkanubis],
