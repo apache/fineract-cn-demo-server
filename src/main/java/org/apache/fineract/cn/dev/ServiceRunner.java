@@ -18,8 +18,18 @@
  */
 package org.apache.fineract.cn.dev;
 
+import static org.apache.fineract.cn.accounting.api.v1.EventConstants.POST_ACCOUNT;
+import static org.apache.fineract.cn.accounting.api.v1.EventConstants.POST_LEDGER;
+
 import ch.vorburger.mariadb4j.DB;
 import ch.vorburger.mariadb4j.DBConfigurationBuilder;
+import java.io.IOException;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 import org.apache.fineract.cn.accounting.api.v1.client.LedgerManager;
 import org.apache.fineract.cn.accounting.importer.AccountImporter;
 import org.apache.fineract.cn.accounting.importer.LedgerImporter;
@@ -37,7 +47,11 @@ import org.apache.fineract.cn.customer.api.v1.client.CustomerManager;
 import org.apache.fineract.cn.deposit.api.v1.client.DepositAccountManager;
 import org.apache.fineract.cn.group.api.v1.client.GroupManager;
 import org.apache.fineract.cn.identity.api.v1.client.IdentityManager;
-import org.apache.fineract.cn.identity.api.v1.domain.*;
+import org.apache.fineract.cn.identity.api.v1.domain.Authentication;
+import org.apache.fineract.cn.identity.api.v1.domain.Password;
+import org.apache.fineract.cn.identity.api.v1.domain.Permission;
+import org.apache.fineract.cn.identity.api.v1.domain.Role;
+import org.apache.fineract.cn.identity.api.v1.domain.UserWithPassword;
 import org.apache.fineract.cn.identity.api.v1.events.ApplicationPermissionEvent;
 import org.apache.fineract.cn.identity.api.v1.events.ApplicationPermissionUserEvent;
 import org.apache.fineract.cn.identity.api.v1.events.ApplicationSignatureEvent;
@@ -49,7 +63,11 @@ import org.apache.fineract.cn.office.api.v1.client.OrganizationManager;
 import org.apache.fineract.cn.payroll.api.v1.client.PayrollManager;
 import org.apache.fineract.cn.portfolio.api.v1.client.PortfolioManager;
 import org.apache.fineract.cn.provisioner.api.v1.client.Provisioner;
-import org.apache.fineract.cn.provisioner.api.v1.domain.*;
+import org.apache.fineract.cn.provisioner.api.v1.domain.Application;
+import org.apache.fineract.cn.provisioner.api.v1.domain.AssignedApplication;
+import org.apache.fineract.cn.provisioner.api.v1.domain.AuthenticationResponse;
+import org.apache.fineract.cn.provisioner.api.v1.domain.IdentityManagerInitialization;
+import org.apache.fineract.cn.provisioner.api.v1.domain.Tenant;
 import org.apache.fineract.cn.reporting.api.v1.client.ReportManager;
 import org.apache.fineract.cn.rhythm.api.v1.client.RhythmManager;
 import org.apache.fineract.cn.rhythm.api.v1.events.BeatEvent;
@@ -63,7 +81,11 @@ import org.apache.fineract.cn.test.servicestarter.IntegrationTestEnvironment;
 import org.apache.fineract.cn.test.servicestarter.Microservice;
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,17 +100,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.Base64Utils;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Scanner;
-import java.util.concurrent.TimeUnit;
-
-import static org.apache.fineract.cn.accounting.api.v1.EventConstants.POST_ACCOUNT;
-import static org.apache.fineract.cn.accounting.api.v1.EventConstants.POST_LEDGER;
-
 @SuppressWarnings("SpringAutowiredFieldsWarningInspection")
 @RunWith(SpringRunner.class)
 @SpringBootTest()
@@ -98,11 +109,11 @@ public class ServiceRunner {
   private static final String ADMIN_USER_NAME = "antony";
   private static final String TEST_LOGGER = "test-logger";
   private static final String LOAN_INCOME_LEDGER = "1100";
-  
+
   private static final String NOTIFICATION_USER_PASSWORD = "shingi";
   private static final String NOTIFICATION_ROLE = "notificationAdmin";
   private static final String NOTIFICATION_USER_IDENTIFIER = "wadaadmin";
-  
+
   private static Microservice<Provisioner> provisionerService;
   private static Microservice<IdentityManager> identityManager;
   private static Microservice<RhythmManager> rhythmManager;
@@ -117,11 +128,12 @@ public class ServiceRunner {
   private static Microservice<PayrollManager> payrollManager;
   private static Microservice<GroupManager> groupManager;
   private static Microservice<NotificationManager> notificationManager;
-  
-  
+
+
   private static DB embeddedMariaDb;
 
   private static final String CUSTOM_PROP_PREFIX = "custom.";
+  private boolean runInDebug;
 
   @Configuration
   @ActiveMQForTest.EnableActiveMQListen
@@ -245,7 +257,7 @@ public class ServiceRunner {
 
     ServiceRunner.groupManager = new Microservice<>(GroupManager.class, "group", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
     startService(generalProperties, ServiceRunner.groupManager);
-  
+
     ServiceRunner.notificationManager = new Microservice<>(NotificationManager.class, "notification", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
     startService(generalProperties, ServiceRunner.notificationManager);
   }
@@ -285,18 +297,18 @@ public class ServiceRunner {
       ServiceRunner.provisionerService.kill();
     }
 
-    System.out.println("Identity Service: " + ServiceRunner.identityManager.getProcessEnvironment().serverURI());
-    System.out.println("Office Service: " + ServiceRunner.organizationManager.getProcessEnvironment().serverURI());
-    System.out.println("Customer Service: " + ServiceRunner.customerManager.getProcessEnvironment().serverURI());
-    System.out.println("Accounting Service: " + ServiceRunner.ledgerManager.getProcessEnvironment().serverURI());
-    System.out.println("Portfolio Service: " + ServiceRunner.portfolioManager.getProcessEnvironment().serverURI());
-    System.out.println("Deposit Service: " + ServiceRunner.depositAccountManager.getProcessEnvironment().serverURI());
-    System.out.println("Teller Service: " + ServiceRunner.tellerManager.getProcessEnvironment().serverURI());
-    System.out.println("Reporting Service: " + ServiceRunner.reportManager.getProcessEnvironment().serverURI());
-    System.out.println("Cheque Service: " + ServiceRunner.chequeManager.getProcessEnvironment().serverURI());
-    System.out.println("Payroll Service: " + ServiceRunner.payrollManager.getProcessEnvironment().serverURI());
-    System.out.println("Group Service: " + ServiceRunner.groupManager.getProcessEnvironment().serverURI());
-    System.out.println("Notification Service: " + ServiceRunner.notificationManager.getProcessEnvironment().serverURI());
+    System.out.println(identityManager.toString());
+    System.out.println(organizationManager.toString());
+    System.out.println(customerManager.toString());
+    System.out.println(ledgerManager.toString());
+    System.out.println(portfolioManager.toString());
+    System.out.println(depositAccountManager.toString());
+    System.out.println(tellerManager.toString());
+    System.out.println(reportManager.toString());
+    System.out.println(chequeManager.toString());
+    System.out.println(payrollManager.toString());
+    System.out.println(groupManager.toString());
+    System.out.println(notificationManager.toString());
 
     boolean run = true;
 
@@ -311,10 +323,16 @@ public class ServiceRunner {
   }
 
   private void startService(ExtraProperties properties, Microservice microservice) throws InterruptedException, IOException, ArtifactResolutionException {
+    if (this.runInDebug) {
+      microservice.runInDebug();
+    }
     microservice.addProperties(properties);
     microservice.start();
     final boolean registered = microservice.waitTillRegistered(discoveryClient);
     logger.info("Service '{}' started and {} with Eureka.", microservice.name(), registered ? "registered" : "not registered");
+    if (this.runInDebug) {
+      logger.info("Service '{}' started with debug port {}.", microservice.name(), microservice.debuggingPort());
+    }
     microservice.setApiFactory(this.apiFactory);
 
     TimeUnit.SECONDS.sleep(20); //Give it some extra time before the next service...
@@ -466,13 +484,13 @@ public class ServiceRunner {
       provisionApp(tenant, ServiceRunner.payrollManager, org.apache.fineract.cn.payroll.api.v1.EventConstants.INITIALIZE);
 
       provisionApp(tenant, ServiceRunner.groupManager, org.apache.fineract.cn.group.api.v1.EventConstants.INITIALIZE);
-  
+
       provisionApp(tenant, ServiceRunner.notificationManager, org.apache.fineract.cn.notification.api.v1.events.NotificationEventConstants.INITIALIZE);
-  
+
       final UserWithPassword orgAdminUserPassword = createOrgAdminRoleAndUser(tenantAdminPassword.getAdminPassword());
-  
+
       createNotificationsAdmin(tenantAdminPassword.getAdminPassword());
-  
+
       createChartOfAccounts(orgAdminUserPassword);
 
       return tenantAdminPassword.getAdminPassword();
@@ -631,39 +649,39 @@ public class ServiceRunner {
 
     return role;
   }
-  
+
   private UserWithPassword createNotificationsAdmin(final String tenantAdminPassword) throws InterruptedException {
     final Authentication adminAuthentication;
     try (final AutoUserContext ignored = new AutoGuest()) {
       adminAuthentication = ServiceRunner.identityManager.api().login(ADMIN_USER_NAME, tenantAdminPassword);
     }
-    
+
     try (final AutoUserContext ignored = new AutoUserContext(ADMIN_USER_NAME, adminAuthentication.getAccessToken())) {
       final Role notificationRole = defineNotificationRole();
-      
+
       ServiceRunner.identityManager.api().createRole(notificationRole);
       Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_ROLE, notificationRole.getIdentifier()));
-      
+
       final UserWithPassword notificationUser = new UserWithPassword();
       notificationUser.setIdentifier(NOTIFICATION_USER_IDENTIFIER);
       notificationUser.setPassword(Base64Utils.encodeToString(NOTIFICATION_USER_PASSWORD.getBytes()));
       notificationUser.setRole(notificationRole.getIdentifier());
-      
+
       ServiceRunner.identityManager.api().createUser(notificationUser);
       Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_USER, notificationUser.getIdentifier()));
-      
+
       ServiceRunner.identityManager.api().logout();
-      
+
       enableUser(notificationUser);
       return notificationUser;
     }
   }
-  
+
   private Role defineNotificationRole() {
     final Permission customerPermission = new Permission();
     customerPermission.setAllowedOperations(Collections.singleton(AllowedOperation.READ));
     customerPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.customer.PermittableGroupIds.CUSTOMER);
-    
+
     final Role role = new Role();
     role.setIdentifier(NOTIFICATION_ROLE);
     role.setPermissions(Arrays.asList(
