@@ -129,7 +129,6 @@ public class ServiceRunner {
   private static Microservice<GroupManager> groupManager;
   private static Microservice<NotificationManager> notificationManager;
 
-
   private static DB embeddedMariaDb;
 
   private static final String CUSTOM_PROP_PREFIX = "custom.";
@@ -271,11 +270,11 @@ public class ServiceRunner {
     ServiceRunner.reportManager.kill();
     ServiceRunner.tellerManager.kill();
     ServiceRunner.depositAccountManager.kill();
-    ServiceRunner.rhythmManager.kill();
     ServiceRunner.portfolioManager.kill();
     ServiceRunner.ledgerManager.kill();
     ServiceRunner.customerManager.kill();
     ServiceRunner.organizationManager.kill();
+    ServiceRunner.rhythmManager.kill();
     ServiceRunner.identityManager.kill();
 
     if (!isPersistent) {
@@ -334,8 +333,6 @@ public class ServiceRunner {
       logger.info("Service '{}' started with debug port {}.", microservice.name(), microservice.debuggingPort());
     }
     microservice.setApiFactory(this.apiFactory);
-
-    TimeUnit.SECONDS.sleep(20); //Give it some extra time before the next service...
   }
 
   private void migrateServices() {
@@ -351,11 +348,6 @@ public class ServiceRunner {
             ServiceRunner.provisionerService.api().assignIdentityManager(tenant.getIdentifier(), assignedApplication);
           } else {
             ServiceRunner.provisionerService.api().assignApplications(tenant.getIdentifier(), Collections.singletonList(assignedApplication));
-            try {
-              Thread.sleep(5000L);
-            } catch (InterruptedException e) {
-              //do nothing
-            }
           }
         });
       });
