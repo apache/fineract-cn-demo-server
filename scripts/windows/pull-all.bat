@@ -22,7 +22,7 @@ SET githubAccount=%1
 cd core
 
 REM pull lang
-cd lang
+cd fineract-cn-lang
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -31,7 +31,7 @@ TIMEOUT /T 5
 cd ..
 
 REM pull async
-cd async
+cd fineract-cn-async
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -40,7 +40,7 @@ TIMEOUT /T 5
 cd ..
 
 REM pull cassandra
-cd cassandra
+cd fineract-cn-cassandra
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -49,7 +49,7 @@ TIMEOUT /T 5
 cd ..
 
 REM pull mariadb
-cd mariadb
+cd fineract-cn-mariadb
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -58,7 +58,7 @@ TIMEOUT /T 5
 cd ..
 
 REM pull data-jpa
-cd data-jpa
+cd fineract-cn-data-jpa
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -67,7 +67,7 @@ TIMEOUT /T 5
 cd ..
 
 REM pull command
-cd command
+cd fineract-cn-command
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -76,7 +76,7 @@ TIMEOUT /T 5
 cd ..
 
 REM pull api
-cd api
+cd fineract-cn-api
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -85,7 +85,16 @@ TIMEOUT /T 5
 cd ..
 
 REM pull test
-cd test
+cd fineract-cn-test
+git checkout develop
+git pull upstream develop
+CALL gradlew publishToMavenLocal
+git push origin develop
+TIMEOUT /T 5
+cd ..
+
+REM pull postgresql
+cd fineract-cn-postgresql
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -98,7 +107,7 @@ cd ..
 cd tools
 
 REM pull crypto
-cd crypto
+cd fineract-cn-crypto
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -109,7 +118,7 @@ cd ..
 cd ..
 
 REM pull anubis
-cd anubis
+cd fineract-cn-anubis
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -118,7 +127,7 @@ TIMEOUT /T 5
 cd ..
 
 REM pull permitted-feign-client
-cd permitted-feign-client
+cd fineract-cn-permitted-feign-client
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -127,7 +136,7 @@ TIMEOUT /T 5
 cd ..
 
 REM pull provisioner
-cd provisioner
+cd fineract-cn-provisioner
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -136,7 +145,7 @@ TIMEOUT /T 5
 cd ..
 
 REM pull identity
-cd identity
+cd fineract-cn-identity
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -145,7 +154,7 @@ TIMEOUT /T 5
 cd ..
 
 REM pull rhythm
-cd rhythm
+cd fineract-cn-rhythm
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -154,7 +163,7 @@ TIMEOUT /T 5
 cd ..
 
 REM pull template
-cd template
+cd fineract-cn-template
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -163,7 +172,7 @@ TIMEOUT /T 5
 cd ..
 
 REM pull office
-cd office
+cd fineract-cn-office
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -172,7 +181,7 @@ TIMEOUT /T 5
 cd ..
 
 REM pull customer
-cd customer
+cd fineract-cn-customer
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -181,7 +190,7 @@ TIMEOUT /T 5
 cd ..
 
 REM pull group
-cd group
+cd fineract-cn-group
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -190,7 +199,7 @@ TIMEOUT /T 5
 cd ..
 
 REM pull accounting
-cd accounting
+cd fineract-cn-accounting
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -199,7 +208,7 @@ TIMEOUT /T 5
 cd ..
 
 REM pull portfolio
-cd portfolio
+cd fineract-cn-portfolio
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -208,7 +217,7 @@ TIMEOUT /T 5
 cd ..
 
 REM pull deposit-account-management
-cd deposit-account-management
+cd fineract-cn-deposit-account-management
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -217,7 +226,7 @@ TIMEOUT /T 5
 cd ..
 
 REM pull teller
-cd teller
+cd fineract-cn-teller
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -226,7 +235,7 @@ TIMEOUT /T 5
 cd ..
 
 REM pull reporting
-cd reporting
+cd fineract-cn-reporting
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -235,7 +244,7 @@ TIMEOUT /T 5
 cd ..
 
 REM pull payroll
-cd payroll
+cd fineract-cn-payroll
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -244,7 +253,7 @@ TIMEOUT /T 5
 cd ..
 
 REM pull notifications
-cd notifications
+cd fineract-cn-notifications
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -255,7 +264,7 @@ cd ..
 cd integration-tests
 
 REM pull service-starter
-cd service-starter
+cd fineract-cn-service-starter
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -264,7 +273,7 @@ TIMEOUT /T 5
 cd ..
 
 REM pull default-setup
-cd default-setup
+cd fineract-cn-default-setup
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -273,7 +282,7 @@ TIMEOUT /T 5
 cd ..
 
 REM pull demo-server
-cd demo-server
+cd fineract-cn-demo-server
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal
@@ -282,7 +291,7 @@ TIMEOUT /T 5
 cd ..
 
 REM pull test-provisioner-identity-organization
-cd test-provisioner-identity-organization
+cd fineract-cn-test-provisioner-identity-organization
 git checkout develop
 git pull upstream develop
 CALL gradlew build
@@ -291,7 +300,7 @@ TIMEOUT /T 5
 cd ..
 
 REM pull test-accounting-portfolio
-cd test-accounting-portfolio
+cd fineract-cn-test-accounting-portfolio
 git checkout develop
 git pull upstream develop
 CALL gradlew build
@@ -302,7 +311,7 @@ cd ..
 cd ..
 
 REM pull Web App
-cd fims-web-app
+cd fineract-cn-fims-web-app
 git checkout develop
 git checkout -- src/main.ts
 git checkout -- src/favicon.png
