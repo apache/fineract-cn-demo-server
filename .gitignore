@@ -15,7 +15,8 @@ gradle-app.setting
 !gradle-wrapper.jar
 
 *.iml
-
+*.ipr
+*.iws
 *.log
 
 *.toDelete
