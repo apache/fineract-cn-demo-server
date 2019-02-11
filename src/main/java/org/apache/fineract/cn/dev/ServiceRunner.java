@@ -18,18 +18,8 @@
  */
 package org.apache.fineract.cn.dev;
 
-import static org.apache.fineract.cn.accounting.api.v1.EventConstants.POST_ACCOUNT;
-import static org.apache.fineract.cn.accounting.api.v1.EventConstants.POST_LEDGER;
-
 import ch.vorburger.mariadb4j.DB;
 import ch.vorburger.mariadb4j.DBConfigurationBuilder;
-import java.io.IOException;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Scanner;
-import java.util.concurrent.TimeUnit;
 import org.apache.fineract.cn.accounting.api.v1.client.LedgerManager;
 import org.apache.fineract.cn.accounting.importer.AccountImporter;
 import org.apache.fineract.cn.accounting.importer.LedgerImporter;
@@ -99,6 +89,18 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.Base64Utils;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
+
+import static org.apache.fineract.cn.accounting.api.v1.EventConstants.POST_ACCOUNT;
+import static org.apache.fineract.cn.accounting.api.v1.EventConstants.POST_LEDGER;
 
 @SuppressWarnings("SpringAutowiredFieldsWarningInspection")
 @RunWith(SpringRunner.class)
@@ -178,6 +180,11 @@ public class ServiceRunner {
   private boolean isPersistent;
   private boolean shouldProvision;
 
+  /* Enabling lite mode restricts the working set of micro-services to Provisioner, Identity, Rhythm, Organization and Customer
+   */
+  private boolean liteModeEnabled;
+
+
   public ServiceRunner() {
     super();
   }
@@ -187,6 +194,7 @@ public class ServiceRunner {
   {
     this.isPersistent = this.environment.containsProperty("demoserver.persistent");
     this.shouldProvision = this.environment.containsProperty("demoserver.provision");
+    liteModeEnabled = this.environment.containsProperty("demoserver.lite");
 
     if (!this.isPersistent) {
       // start embedded Cassandra
@@ -221,7 +229,8 @@ public class ServiceRunner {
     ServiceRunner.rhythmManager = new Microservice<>(RhythmManager.class, "rhythm", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT)
             .addProperties(new ExtraProperties() {{
               setProperty("rhythm.beatCheckRate", Long.toString(TimeUnit.MINUTES.toMillis(10)));
-              setProperty("rhythm.user", SCHEDULER_USER_NAME);}});
+              setProperty("rhythm.user", SCHEDULER_USER_NAME);
+            }});
     startService(generalProperties, rhythmManager);
 
     ServiceRunner.organizationManager = new Microservice<>(OrganizationManager.class, "office", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
@@ -230,48 +239,52 @@ public class ServiceRunner {
     ServiceRunner.customerManager = new Microservice<>(CustomerManager.class, "customer", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
     startService(generalProperties, customerManager);
 
-    ServiceRunner.ledgerManager = new Microservice<>(LedgerManager.class, "accounting", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-    startService(generalProperties, ledgerManager);
+    if(!liteModeEnabled) {
+      ServiceRunner.ledgerManager = new Microservice<>(LedgerManager.class, "accounting", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+      startService(generalProperties, ledgerManager);
 
-    ServiceRunner.portfolioManager = new Microservice<>(PortfolioManager.class, "portfolio", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT)
-            .addProperties(new ExtraProperties() {{
-              setProperty("portfolio.bookLateFeesAndInterestAsUser", SCHEDULER_USER_NAME);
-            }});
-    startService(generalProperties, portfolioManager);
+      ServiceRunner.portfolioManager = new Microservice<>(PortfolioManager.class, "portfolio", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT)
+              .addProperties(new ExtraProperties() {{
+                setProperty("portfolio.bookLateFeesAndInterestAsUser", SCHEDULER_USER_NAME);
+              }});
+      startService(generalProperties, portfolioManager);
 
-    ServiceRunner.depositAccountManager = new Microservice<>(DepositAccountManager.class, "deposit-account-management", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-    startService(generalProperties, depositAccountManager);
+      ServiceRunner.depositAccountManager = new Microservice<>(DepositAccountManager.class, "deposit-account-management", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+      startService(generalProperties, depositAccountManager);
 
-    ServiceRunner.tellerManager = new Microservice<>(TellerManager.class, "teller", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-    startService(generalProperties, ServiceRunner.tellerManager);
+      ServiceRunner.tellerManager = new Microservice<>(TellerManager.class, "teller", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+      startService(generalProperties, ServiceRunner.tellerManager);
 
-    ServiceRunner.reportManager = new Microservice<>(ReportManager.class, "reporting", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-    startService(generalProperties, ServiceRunner.reportManager);
+      ServiceRunner.reportManager = new Microservice<>(ReportManager.class, "reporting", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+      startService(generalProperties, ServiceRunner.reportManager);
 
-    ServiceRunner.chequeManager = new Microservice<>(ChequeManager.class, "cheques", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-    startService(generalProperties, ServiceRunner.chequeManager);
+      ServiceRunner.chequeManager = new Microservice<>(ChequeManager.class, "cheques", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+      startService(generalProperties, ServiceRunner.chequeManager);
 
-    ServiceRunner.payrollManager = new Microservice<>(PayrollManager.class, "payroll", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-    startService(generalProperties, ServiceRunner.payrollManager);
+      ServiceRunner.payrollManager = new Microservice<>(PayrollManager.class, "payroll", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+      startService(generalProperties, ServiceRunner.payrollManager);
 
-    ServiceRunner.groupManager = new Microservice<>(GroupManager.class, "group", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-    startService(generalProperties, ServiceRunner.groupManager);
+      ServiceRunner.groupManager = new Microservice<>(GroupManager.class, "group", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+      startService(generalProperties, ServiceRunner.groupManager);
 
-    ServiceRunner.notificationManager = new Microservice<>(NotificationManager.class, "notification", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-    startService(generalProperties, ServiceRunner.notificationManager);
+      ServiceRunner.notificationManager = new Microservice<>(NotificationManager.class, "notification", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+      startService(generalProperties, ServiceRunner.notificationManager);
+    }
   }
 
   @After
   public void tearDown() throws Exception {
-    ServiceRunner.notificationManager.kill();
-    ServiceRunner.groupManager.kill();
-    ServiceRunner.payrollManager.kill();
-    ServiceRunner.chequeManager.kill();
-    ServiceRunner.reportManager.kill();
-    ServiceRunner.tellerManager.kill();
-    ServiceRunner.depositAccountManager.kill();
-    ServiceRunner.portfolioManager.kill();
-    ServiceRunner.ledgerManager.kill();
+    if(!liteModeEnabled) {
+      ServiceRunner.notificationManager.kill();
+      ServiceRunner.groupManager.kill();
+      ServiceRunner.payrollManager.kill();
+      ServiceRunner.chequeManager.kill();
+      ServiceRunner.reportManager.kill();
+      ServiceRunner.tellerManager.kill();
+      ServiceRunner.depositAccountManager.kill();
+      ServiceRunner.portfolioManager.kill();
+      ServiceRunner.ledgerManager.kill();
+    }
     ServiceRunner.customerManager.kill();
     ServiceRunner.organizationManager.kill();
     ServiceRunner.rhythmManager.kill();
@@ -299,15 +312,17 @@ public class ServiceRunner {
     System.out.println(identityManager.toString());
     System.out.println(organizationManager.toString());
     System.out.println(customerManager.toString());
-    System.out.println(ledgerManager.toString());
-    System.out.println(portfolioManager.toString());
-    System.out.println(depositAccountManager.toString());
-    System.out.println(tellerManager.toString());
-    System.out.println(reportManager.toString());
-    System.out.println(chequeManager.toString());
-    System.out.println(payrollManager.toString());
-    System.out.println(groupManager.toString());
-    System.out.println(notificationManager.toString());
+    if(!liteModeEnabled) {
+      System.out.println(ledgerManager.toString());
+      System.out.println(portfolioManager.toString());
+      System.out.println(depositAccountManager.toString());
+      System.out.println(tellerManager.toString());
+      System.out.println(reportManager.toString());
+      System.out.println(chequeManager.toString());
+      System.out.println(payrollManager.toString());
+      System.out.println(groupManager.toString());
+      System.out.println(notificationManager.toString());
+    }
 
     boolean run = true;
 
@@ -356,23 +371,24 @@ public class ServiceRunner {
 
   private void provisionAppsViaSeshat() throws InterruptedException, IOException {
     final AuthenticationResponse authenticationResponse =
-        ServiceRunner.provisionerService.api().authenticate(ServiceRunner.CLIENT_ID, ApiConstants.SYSTEM_SU, "oS/0IiAME/2unkN1momDrhAdNKOhGykYFH/mJN20");
+            ServiceRunner.provisionerService.api().authenticate(ServiceRunner.CLIENT_ID, ApiConstants.SYSTEM_SU, "oS/0IiAME/2unkN1momDrhAdNKOhGykYFH/mJN20");
 
-    final List<Application> applicationsToCreate = Arrays.asList(
-        ApplicationBuilder.create(ServiceRunner.identityManager.name(), ServiceRunner.identityManager.uri()),
-        ApplicationBuilder.create(ServiceRunner.rhythmManager.name(), ServiceRunner.rhythmManager.uri()),
-        ApplicationBuilder.create(ServiceRunner.organizationManager.name(), ServiceRunner.organizationManager.uri()),
-        ApplicationBuilder.create(ServiceRunner.customerManager.name(), ServiceRunner.customerManager.uri()),
-        ApplicationBuilder.create(ServiceRunner.ledgerManager.name(), ServiceRunner.ledgerManager.uri()),
-        ApplicationBuilder.create(ServiceRunner.portfolioManager.name(), ServiceRunner.portfolioManager.uri()),
-        ApplicationBuilder.create(ServiceRunner.depositAccountManager.name(), ServiceRunner.depositAccountManager.uri()),
-        ApplicationBuilder.create(ServiceRunner.tellerManager.name(), ServiceRunner.tellerManager.uri()),
-        ApplicationBuilder.create(ServiceRunner.reportManager.name(), ServiceRunner.reportManager.uri()),
-        ApplicationBuilder.create(ServiceRunner.chequeManager.name(), ServiceRunner.chequeManager.uri()),
-        ApplicationBuilder.create(ServiceRunner.payrollManager.name(), ServiceRunner.payrollManager.uri()),
-        ApplicationBuilder.create(ServiceRunner.groupManager.name(), ServiceRunner.groupManager.uri()),
-        ApplicationBuilder.create(ServiceRunner.notificationManager.name(), ServiceRunner.notificationManager.uri())
-    );
+    final List<Application> applicationsToCreate = new ArrayList<>();
+    applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.identityManager.name(), ServiceRunner.identityManager.uri()));
+    applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.rhythmManager.name(), ServiceRunner.rhythmManager.uri()));
+    applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.organizationManager.name(), ServiceRunner.organizationManager.uri()));
+    applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.customerManager.name(), ServiceRunner.customerManager.uri()));
+    if (!liteModeEnabled) {
+      applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.ledgerManager.name(), ServiceRunner.ledgerManager.uri()));
+      applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.portfolioManager.name(), ServiceRunner.portfolioManager.uri()));
+      applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.depositAccountManager.name(), ServiceRunner.depositAccountManager.uri()));
+      applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.tellerManager.name(), ServiceRunner.tellerManager.uri()));
+      applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.reportManager.name(), ServiceRunner.reportManager.uri()));
+      applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.chequeManager.name(), ServiceRunner.chequeManager.uri()));
+      applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.payrollManager.name(), ServiceRunner.payrollManager.uri()));
+      applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.groupManager.name(), ServiceRunner.groupManager.uri()));
+      applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.notificationManager.name(), ServiceRunner.notificationManager.uri()));
+    }
 
 
     final List<Tenant> tenantsToCreate = Arrays.asList(
@@ -404,86 +420,85 @@ public class ServiceRunner {
 
       final IdentityManagerInitialization tenantAdminPassword
               = provisionerService.api().assignIdentityManager(tenant.getIdentifier(), isisAssigned);
+      provisionApp(tenant, rhythmManager, org.apache.fineract.cn.rhythm.api.v1.events.EventConstants.INITIALIZE);
+      provisionApp(tenant, ServiceRunner.organizationManager, org.apache.fineract.cn.office.api.v1.EventConstants.INITIALIZE);
+      provisionApp(tenant, ServiceRunner.customerManager, CustomerEventConstants.INITIALIZE);
 
+
+      final UserWithPassword orgAdminUserPassword = createOrgAdminRoleAndUser(tenantAdminPassword.getAdminPassword());
 
       //Creation of the schedulerUserRole, and permitting it to create application permission requests are needed in the
       //provisioning of portfolio.  Portfolio asks rhythm for a callback.  Rhythm asks identity for permission to send
       //that call back.  Rhythm needs permission to ask identity directly rather than through the provisioner because
       //the request is made outside of rhythm's initialization.
-      final UserWithPassword schedulerUser = createSchedulerUserRoleAndPassword(tenantAdminPassword.getAdminPassword());
 
-      provisionApp(tenant, rhythmManager, org.apache.fineract.cn.rhythm.api.v1.events.EventConstants.INITIALIZE);
+      if (!liteModeEnabled) {
+        final UserWithPassword schedulerUser = createSchedulerUserRoleAndPassword(tenantAdminPassword.getAdminPassword());
+        Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_APPLICATION_PERMISSION, new ApplicationPermissionEvent(rhythmManager.name(), org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT)));
 
-      Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_APPLICATION_PERMISSION, new ApplicationPermissionEvent(rhythmManager.name(), org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT)));
+        final Authentication schedulerUserAuthentication;
+        try (final AutoGuest ignored2 = new AutoGuest()) {
+          enableUser(schedulerUser);
+          schedulerUserAuthentication = identityManager.api().login(schedulerUser.getIdentifier(), schedulerUser.getPassword());
+        }
 
-      final Authentication schedulerUserAuthentication;
-      try (final AutoGuest ignored2 = new AutoGuest()) {
-        enableUser(schedulerUser);
-        schedulerUserAuthentication = identityManager.api().login(schedulerUser.getIdentifier(), schedulerUser.getPassword());
+        try (final AutoUserContext ignored2 = new AutoUserContext(schedulerUser.getIdentifier(), schedulerUserAuthentication.getAccessToken())) {
+          identityManager.api().setApplicationPermissionEnabledForUser(
+                  rhythmManager.name(),
+                  org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT,
+                  schedulerUser.getIdentifier(),
+                  true);
+          Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_PUT_APPLICATION_PERMISSION_USER_ENABLED, new ApplicationPermissionUserEvent(rhythmManager.name(), org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT, schedulerUser.getIdentifier())));
+        }
+
+        provisionApp(tenant, ledgerManager, org.apache.fineract.cn.accounting.api.v1.EventConstants.INITIALIZE);
+
+        provisionApp(tenant, portfolioManager, org.apache.fineract.cn.portfolio.api.v1.events.EventConstants.INITIALIZE);
+
+        Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_PERMITTABLE_GROUP,
+                org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name())));
+
+        for (int i = 0; i < 24; i++) {
+          Assert.assertTrue("Beat #" + i,
+                  eventRecorder.wait(org.apache.fineract.cn.rhythm.api.v1.events.EventConstants.POST_BEAT,
+                          new BeatEvent(portfolioManager.name(), "alignment" + i)));
+        }
+
+        final Authentication schedulerAuthentication;
+        try (final AutoGuest ignored2 = new AutoGuest()) {
+          schedulerAuthentication = identityManager.api().login(schedulerUser.getIdentifier(), schedulerUser.getPassword());
+        }
+
+        try (final AutoUserContext ignored2 = new AutoUserContext(schedulerUser.getIdentifier(), schedulerAuthentication.getAccessToken())) {
+          //Allow rhythm to send a beat to portfolio as the scheduler user.
+          identityManager.api().setApplicationPermissionEnabledForUser(
+                  rhythmManager.name(),
+                  org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()),
+                  schedulerUser.getIdentifier(),
+                  true);
+          Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_PUT_APPLICATION_PERMISSION_USER_ENABLED,
+                  new ApplicationPermissionUserEvent(rhythmManager.name(),
+                          org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()), schedulerUser.getIdentifier())));
+        }
+
+        provisionApp(tenant, depositAccountManager, org.apache.fineract.cn.deposit.api.v1.EventConstants.INITIALIZE);
+
+        provisionApp(tenant, ServiceRunner.tellerManager, org.apache.fineract.cn.teller.api.v1.EventConstants.INITIALIZE);
+
+        provisionApp(tenant, ServiceRunner.reportManager, org.apache.fineract.cn.reporting.api.v1.EventConstants.INITIALIZE);
+
+        provisionApp(tenant, ServiceRunner.chequeManager, org.apache.fineract.cn.cheque.api.v1.EventConstants.INITIALIZE);
+
+        provisionApp(tenant, ServiceRunner.payrollManager, org.apache.fineract.cn.payroll.api.v1.EventConstants.INITIALIZE);
+
+        provisionApp(tenant, ServiceRunner.groupManager, org.apache.fineract.cn.group.api.v1.EventConstants.INITIALIZE);
+
+        provisionApp(tenant, ServiceRunner.notificationManager, org.apache.fineract.cn.notification.api.v1.events.NotificationEventConstants.INITIALIZE);
+
+        createNotificationsAdmin(tenantAdminPassword.getAdminPassword());
+
+        createChartOfAccounts(orgAdminUserPassword);
       }
-
-      try (final AutoUserContext ignored2 = new AutoUserContext(schedulerUser.getIdentifier(), schedulerUserAuthentication.getAccessToken())) {
-        identityManager.api().setApplicationPermissionEnabledForUser(
-                rhythmManager.name(),
-                org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT,
-                schedulerUser.getIdentifier(),
-                true);
-        Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_PUT_APPLICATION_PERMISSION_USER_ENABLED, new ApplicationPermissionUserEvent(rhythmManager.name(), org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT, schedulerUser.getIdentifier())));
-      }
-
-      provisionApp(tenant, ServiceRunner.organizationManager, org.apache.fineract.cn.office.api.v1.EventConstants.INITIALIZE);
-
-      provisionApp(tenant, ledgerManager, org.apache.fineract.cn.accounting.api.v1.EventConstants.INITIALIZE);
-
-      provisionApp(tenant, portfolioManager, org.apache.fineract.cn.portfolio.api.v1.events.EventConstants.INITIALIZE);
-
-      Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_PERMITTABLE_GROUP,
-              org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name())));
-
-      for (int i = 0; i < 24; i++) {
-        Assert.assertTrue("Beat #" + i,
-                eventRecorder.wait(org.apache.fineract.cn.rhythm.api.v1.events.EventConstants.POST_BEAT,
-                        new BeatEvent(portfolioManager.name(), "alignment" + i)));
-      }
-
-      final Authentication schedulerAuthentication;
-      try (final AutoGuest ignored2 = new AutoGuest()) {
-        schedulerAuthentication = identityManager.api().login(schedulerUser.getIdentifier(), schedulerUser.getPassword());
-      }
-
-      try (final AutoUserContext ignored2 = new AutoUserContext(schedulerUser.getIdentifier(), schedulerAuthentication.getAccessToken())) {
-        //Allow rhythm to send a beat to portfolio as the scheduler user.
-        identityManager.api().setApplicationPermissionEnabledForUser(
-                rhythmManager.name(),
-                org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()),
-                schedulerUser.getIdentifier(),
-                true);
-        Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_PUT_APPLICATION_PERMISSION_USER_ENABLED,
-                new ApplicationPermissionUserEvent(rhythmManager.name(),
-                        org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()), schedulerUser.getIdentifier())));
-      }
-
-      provisionApp(tenant, ServiceRunner.customerManager, CustomerEventConstants.INITIALIZE);
-
-      provisionApp(tenant, depositAccountManager, org.apache.fineract.cn.deposit.api.v1.EventConstants.INITIALIZE);
-
-      provisionApp(tenant, ServiceRunner.tellerManager, org.apache.fineract.cn.teller.api.v1.EventConstants.INITIALIZE);
-
-      provisionApp(tenant, ServiceRunner.reportManager, org.apache.fineract.cn.reporting.api.v1.EventConstants.INITIALIZE);
-
-      provisionApp(tenant, ServiceRunner.chequeManager, org.apache.fineract.cn.cheque.api.v1.EventConstants.INITIALIZE);
-
-      provisionApp(tenant, ServiceRunner.payrollManager, org.apache.fineract.cn.payroll.api.v1.EventConstants.INITIALIZE);
-
-      provisionApp(tenant, ServiceRunner.groupManager, org.apache.fineract.cn.group.api.v1.EventConstants.INITIALIZE);
-
-      provisionApp(tenant, ServiceRunner.notificationManager, org.apache.fineract.cn.notification.api.v1.events.NotificationEventConstants.INITIALIZE);
-
-      final UserWithPassword orgAdminUserPassword = createOrgAdminRoleAndUser(tenantAdminPassword.getAdminPassword());
-
-      createNotificationsAdmin(tenantAdminPassword.getAdminPassword());
-
-      createChartOfAccounts(orgAdminUserPassword);
 
       return tenantAdminPassword.getAdminPassword();
     }

@@ -25,6 +25,9 @@ Run in persistent mode and to NOT use embedded datastores
 ##### demoserver.provision (true/false)
 Run the provision steps against the services to bootstrap tenants
 
+##### demoserver.lite (true/false)
+Enabling lite mode (defaults to false) restricts the working set of micro-services to Provisioner, Identity, Rhythm, Organization and Customer
+
 ##### custom.cassandra.contactPoints
 Custom cassandra contact points (multiple values allowed separated by comma e.g. 127.0.0.1:9042,127.0.0.2:9042)
 
