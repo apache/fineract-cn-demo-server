@@ -46,6 +46,7 @@ import org.apache.fineract.cn.identity.api.v1.events.ApplicationPermissionEvent;
 import org.apache.fineract.cn.identity.api.v1.events.ApplicationPermissionUserEvent;
 import org.apache.fineract.cn.identity.api.v1.events.ApplicationSignatureEvent;
 import org.apache.fineract.cn.identity.api.v1.events.EventConstants;
+import org.apache.fineract.cn.interoperation.api.v1.client.InteroperationManager;
 import org.apache.fineract.cn.lang.AutoTenantContext;
 import org.apache.fineract.cn.mariadb.util.MariaDBConstants;
 import org.apache.fineract.cn.notification.api.v1.client.NotificationManager;
@@ -66,8 +67,11 @@ import org.apache.fineract.cn.test.env.ExtraProperties;
 import org.apache.fineract.cn.test.listener.EnableEventRecording;
 import org.apache.fineract.cn.test.listener.EventRecorder;
 import org.apache.fineract.cn.test.servicestarter.ActiveMQForTest;
+import org.apache.fineract.cn.test.servicestarter.ArtifactResolver;
+import org.apache.fineract.cn.test.servicestarter.DirectoryBasedArtifactResolver;
 import org.apache.fineract.cn.test.servicestarter.EurekaForTest;
 import org.apache.fineract.cn.test.servicestarter.IntegrationTestEnvironment;
+import org.apache.fineract.cn.test.servicestarter.MavenRepositoryBasedArtifactResolver;
 import org.apache.fineract.cn.test.servicestarter.Microservice;
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
@@ -95,14 +99,16 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.apache.fineract.cn.accounting.api.v1.EventConstants.POST_ACCOUNT;
 import static org.apache.fineract.cn.accounting.api.v1.EventConstants.POST_LEDGER;
 
-@SuppressWarnings("SpringAutowiredFieldsWarningInspection")
+@SuppressWarnings({"SpringAutowiredFieldsWarningInspection", "Duplicates"})
 @RunWith(SpringRunner.class)
 @SpringBootTest()
 public class ServiceRunner {
@@ -116,6 +122,14 @@ public class ServiceRunner {
   private static final String NOTIFICATION_ROLE = "notificationAdmin";
   private static final String NOTIFICATION_USER_IDENTIFIER = "wadaadmin";
 
+  private static final String ADMINISTRATOR_USER = "operator";
+  private static final String ADMINISTRATOR_ROLE = "orgadmin";
+  private static final String ADMINISTRATOR_PASS = "init1@l";
+
+  private static final String INTEROPERATION_USER = "interopUser";
+  private static final String INTEROPERATION_ROLE = "interopRole";
+  private static final String INTEROPERATION_PASS = "intop@d1";
+
   private static Microservice<Provisioner> provisionerService;
   private static Microservice<IdentityManager> identityManager;
   private static Microservice<RhythmManager> rhythmManager;
@@ -127,6 +141,7 @@ public class ServiceRunner {
   private static Microservice<TellerManager> tellerManager;
   private static Microservice<ReportManager> reportManager;
   private static Microservice<ChequeManager> chequeManager;
+  private static Microservice<InteroperationManager> interoperationManager;
   private static Microservice<PayrollManager> payrollManager;
   private static Microservice<GroupManager> groupManager;
   private static Microservice<NotificationManager> notificationManager;
@@ -135,6 +150,8 @@ public class ServiceRunner {
 
   private static final String CUSTOM_PROP_PREFIX = "custom.";
   private boolean runInDebug;
+
+  private static final String JAR_DIR_PROP = "jarsdir";
 
   @Configuration
   @ActiveMQForTest.EnableActiveMQListen
@@ -181,9 +198,10 @@ public class ServiceRunner {
   private boolean shouldProvision;
 
   /* Enabling lite mode restricts the working set of micro-services to Provisioner, Identity, Rhythm, Organization and Customer
-   */
+ */
   private boolean liteModeEnabled;
 
+  private static ArtifactResolver artifactResolver;
 
   public ServiceRunner() {
     super();
@@ -216,27 +234,28 @@ public class ServiceRunner {
     generalProperties.setProperty("bonecp.acquireIncrement", "1");
     this.setAdditionalProperties(generalProperties);
 
-    ServiceRunner.provisionerService = new Microservice<>(Provisioner.class, "provisioner", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+    this.setupArtifactResolver(generalProperties);
+
+    ServiceRunner.provisionerService = new Microservice<>(Provisioner.class, "provisioner", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT, artifactResolver);
     provisionerService.getProcessEnvironment().addSystemPrivateKeyToProperties();
     provisionerService.getProcessEnvironment().setProperty("system.initialclientid", ServiceRunner.CLIENT_ID);
     startService(generalProperties, provisionerService);
 
-    ServiceRunner.identityManager = new Microservice<>(IdentityManager.class, "identity", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT)
+    ServiceRunner.identityManager = new Microservice<>(IdentityManager.class, "identity", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT, artifactResolver)
             .addProperties(new ExtraProperties() {{
               setProperty("identity.token.refresh.secureCookie", "false");}});
     startService(generalProperties, identityManager);
 
-    ServiceRunner.rhythmManager = new Microservice<>(RhythmManager.class, "rhythm", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT)
+    ServiceRunner.rhythmManager = new Microservice<>(RhythmManager.class, "rhythm", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT, artifactResolver)
             .addProperties(new ExtraProperties() {{
               setProperty("rhythm.beatCheckRate", Long.toString(TimeUnit.MINUTES.toMillis(10)));
-              setProperty("rhythm.user", SCHEDULER_USER_NAME);
-            }});
+              setProperty("rhythm.user", SCHEDULER_USER_NAME);}});
     startService(generalProperties, rhythmManager);
 
-    ServiceRunner.organizationManager = new Microservice<>(OrganizationManager.class, "office", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+    ServiceRunner.organizationManager = new Microservice<>(OrganizationManager.class, "office", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT, artifactResolver);
     startService(generalProperties, organizationManager);
 
-    ServiceRunner.customerManager = new Microservice<>(CustomerManager.class, "customer", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+    ServiceRunner.customerManager = new Microservice<>(CustomerManager.class, "customer", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT, artifactResolver);
     startService(generalProperties, customerManager);
 
     if(!liteModeEnabled) {
@@ -251,6 +270,9 @@ public class ServiceRunner {
 
       ServiceRunner.depositAccountManager = new Microservice<>(DepositAccountManager.class, "deposit-account-management", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
       startService(generalProperties, depositAccountManager);
+
+      ServiceRunner.interoperationManager = new Microservice<>(InteroperationManager.class, "interoperation", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT, artifactResolver);
+      startService(generalProperties, interoperationManager);
 
       ServiceRunner.tellerManager = new Microservice<>(TellerManager.class, "teller", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
       startService(generalProperties, ServiceRunner.tellerManager);
@@ -280,6 +302,7 @@ public class ServiceRunner {
       ServiceRunner.payrollManager.kill();
       ServiceRunner.chequeManager.kill();
       ServiceRunner.reportManager.kill();
+      ServiceRunner.interoperationManager.kill();
       ServiceRunner.tellerManager.kill();
       ServiceRunner.depositAccountManager.kill();
       ServiceRunner.portfolioManager.kill();
@@ -315,16 +338,20 @@ public class ServiceRunner {
     if(!liteModeEnabled) {
       System.out.println(ledgerManager.toString());
       System.out.println(portfolioManager.toString());
+      System.out.println(rhythmManager.toString());
       System.out.println(depositAccountManager.toString());
+      System.out.println(chequeManager.toString());
       System.out.println(tellerManager.toString());
       System.out.println(reportManager.toString());
-      System.out.println(chequeManager.toString());
+      System.out.println(interoperationManager.toString());
       System.out.println(payrollManager.toString());
       System.out.println(groupManager.toString());
       System.out.println(notificationManager.toString());
     }
 
-    boolean run = true;
+    System.out.println("-- End of Provision process --");
+
+    boolean run = false;
 
     while (run) {
       final Scanner scanner = new Scanner(System.in);
@@ -334,6 +361,17 @@ public class ServiceRunner {
       }
       eventRecorder.clear();
     }
+  }
+
+  private void setupArtifactResolver(final ExtraProperties properties) {
+    if (properties.containsKey(ServiceRunner.JAR_DIR_PROP)) {
+      final String jarDir = properties.get(ServiceRunner.JAR_DIR_PROP);
+      artifactResolver = new DirectoryBasedArtifactResolver(jarDir);
+      logger.info("Deployment based on Jar directory: "+ jarDir);
+      return;
+    }
+    artifactResolver = new MavenRepositoryBasedArtifactResolver(INTEGRATION_TEST_ENVIRONMENT.getMavenRepsotiroyBasedArtifactoryDirectory());
+    logger.info("Deployment based on Maven repository.");
   }
 
   private void startService(ExtraProperties properties, Microservice microservice) throws InterruptedException, IOException, ArtifactResolutionException {
@@ -348,6 +386,8 @@ public class ServiceRunner {
       logger.info("Service '{}' started with debug port {}.", microservice.name(), microservice.debuggingPort());
     }
     microservice.setApiFactory(this.apiFactory);
+
+    TimeUnit.SECONDS.sleep(20); //Give it some extra time before the next service...
   }
 
   private void migrateServices() {
@@ -363,6 +403,11 @@ public class ServiceRunner {
             ServiceRunner.provisionerService.api().assignIdentityManager(tenant.getIdentifier(), assignedApplication);
           } else {
             ServiceRunner.provisionerService.api().assignApplications(tenant.getIdentifier(), Collections.singletonList(assignedApplication));
+            try {
+              Thread.sleep(5000L);
+            } catch (InterruptedException e) {
+              //do nothing
+            }
           }
         });
       });
@@ -371,37 +416,37 @@ public class ServiceRunner {
 
   private void provisionAppsViaSeshat() throws InterruptedException, IOException {
     final AuthenticationResponse authenticationResponse =
-            ServiceRunner.provisionerService.api().authenticate(ServiceRunner.CLIENT_ID, ApiConstants.SYSTEM_SU, "oS/0IiAME/2unkN1momDrhAdNKOhGykYFH/mJN20");
+        ServiceRunner.provisionerService.api().authenticate(ServiceRunner.CLIENT_ID, ApiConstants.SYSTEM_SU, "oS/0IiAME/2unkN1momDrhAdNKOhGykYFH/mJN20");
 
-    final List<Application> applicationsToCreate = new ArrayList<>();
-    applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.identityManager.name(), ServiceRunner.identityManager.uri()));
-    applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.rhythmManager.name(), ServiceRunner.rhythmManager.uri()));
-    applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.organizationManager.name(), ServiceRunner.organizationManager.uri()));
-    applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.customerManager.name(), ServiceRunner.customerManager.uri()));
-    if (!liteModeEnabled) {
-      applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.ledgerManager.name(), ServiceRunner.ledgerManager.uri()));
-      applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.portfolioManager.name(), ServiceRunner.portfolioManager.uri()));
-      applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.depositAccountManager.name(), ServiceRunner.depositAccountManager.uri()));
-      applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.tellerManager.name(), ServiceRunner.tellerManager.uri()));
-      applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.reportManager.name(), ServiceRunner.reportManager.uri()));
-      applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.chequeManager.name(), ServiceRunner.chequeManager.uri()));
-      applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.payrollManager.name(), ServiceRunner.payrollManager.uri()));
-      applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.groupManager.name(), ServiceRunner.groupManager.uri()));
-      applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.notificationManager.name(), ServiceRunner.notificationManager.uri()));
-    }
-
-
-    final List<Tenant> tenantsToCreate = Arrays.asList(
-            TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "playground", "A place to mess around and have fun", "playground")
-            //TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "demo-cccu", "Demo for CCCU", "demo_cccu"),
-            //TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "SKCUKNS1", "St Kitts Cooperative Credit Union", "SKCUKNS1"),
-            //TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "PCCUKNS1", "Police Cooperative Credit Union", "PCCUKNS1"),
-            //TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "FCCUKNS1", "FND Cooperative Credit Union", "FCCUKNS1"),
-            //TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "NCCUKNN1", "Nevis Cooperative Credit Union", "NCCUKNN1")
+    final List<Application> applicationsToCreate = Arrays.asList(
+        ApplicationBuilder.create(ServiceRunner.identityManager.name(), ServiceRunner.identityManager.uri()),
+        ApplicationBuilder.create(ServiceRunner.rhythmManager.name(), ServiceRunner.rhythmManager.uri()),
+        ApplicationBuilder.create(ServiceRunner.organizationManager.name(), ServiceRunner.organizationManager.uri()),
+        ApplicationBuilder.create(ServiceRunner.customerManager.name(), ServiceRunner.customerManager.uri()),
+        ApplicationBuilder.create(ServiceRunner.ledgerManager.name(), ServiceRunner.ledgerManager.uri()),
+        ApplicationBuilder.create(ServiceRunner.portfolioManager.name(), ServiceRunner.portfolioManager.uri()),
+        ApplicationBuilder.create(ServiceRunner.depositAccountManager.name(), ServiceRunner.depositAccountManager.uri()),
+        ApplicationBuilder.create(ServiceRunner.tellerManager.name(), ServiceRunner.tellerManager.uri()),
+        ApplicationBuilder.create(ServiceRunner.reportManager.name(), ServiceRunner.reportManager.uri()),
+        ApplicationBuilder.create(ServiceRunner.chequeManager.name(), ServiceRunner.chequeManager.uri()),
+        ApplicationBuilder.create(ServiceRunner.interoperationManager.name(), ServiceRunner.interoperationManager.uri()),
+        ApplicationBuilder.create(ServiceRunner.payrollManager.name(), ServiceRunner.payrollManager.uri()),
+        ApplicationBuilder.create(ServiceRunner.groupManager.name(), ServiceRunner.groupManager.uri()),
+        ApplicationBuilder.create(ServiceRunner.notificationManager.name(), ServiceRunner.notificationManager.uri())
     );
 
+    // TODO: read from file
+    final List<Tenant> tenantsToCreate = Arrays.asList(
+            TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "tn01", "Demo Customer Tenant", "tn01"),
+            TenantBuilder.create(ServiceRunner.provisionerService.getProcessEnvironment(), "tn02", "Demo Merchant Tenant", "tn02")
+    );
+
+    logger.info("create applications");
     try (final AutoSeshat ignored = new AutoSeshat(authenticationResponse.getToken())) {
-      applicationsToCreate.forEach(application -> ServiceRunner.provisionerService.api().createApplication(application));
+      applicationsToCreate.forEach(application -> {
+        logger.info("Create application: "+ application.getName());
+        ServiceRunner.provisionerService.api().createApplication(application);
+      });
     }
     for (final Tenant tenant : tenantsToCreate) {
       try (final AutoSeshat ignored = new AutoSeshat(authenticationResponse.getToken())) {
@@ -420,85 +465,94 @@ public class ServiceRunner {
 
       final IdentityManagerInitialization tenantAdminPassword
               = provisionerService.api().assignIdentityManager(tenant.getIdentifier(), isisAssigned);
-      provisionApp(tenant, rhythmManager, org.apache.fineract.cn.rhythm.api.v1.events.EventConstants.INITIALIZE);
-      provisionApp(tenant, ServiceRunner.organizationManager, org.apache.fineract.cn.office.api.v1.EventConstants.INITIALIZE);
-      provisionApp(tenant, ServiceRunner.customerManager, CustomerEventConstants.INITIALIZE);
 
-
-      final UserWithPassword orgAdminUserPassword = createOrgAdminRoleAndUser(tenantAdminPassword.getAdminPassword());
 
       //Creation of the schedulerUserRole, and permitting it to create application permission requests are needed in the
       //provisioning of portfolio.  Portfolio asks rhythm for a callback.  Rhythm asks identity for permission to send
       //that call back.  Rhythm needs permission to ask identity directly rather than through the provisioner because
       //the request is made outside of rhythm's initialization.
+      final UserWithPassword schedulerUser = createSchedulerUserRoleAndPassword(tenantAdminPassword.getAdminPassword());
 
-      if (!liteModeEnabled) {
-        final UserWithPassword schedulerUser = createSchedulerUserRoleAndPassword(tenantAdminPassword.getAdminPassword());
-        Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_APPLICATION_PERMISSION, new ApplicationPermissionEvent(rhythmManager.name(), org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT)));
+      provisionApp(tenant, rhythmManager, org.apache.fineract.cn.rhythm.api.v1.events.EventConstants.INITIALIZE);
 
-        final Authentication schedulerUserAuthentication;
-        try (final AutoGuest ignored2 = new AutoGuest()) {
-          enableUser(schedulerUser);
-          schedulerUserAuthentication = identityManager.api().login(schedulerUser.getIdentifier(), schedulerUser.getPassword());
-        }
+      Assert.assertTrue(
+              this.eventRecorder.wait(EventConstants.OPERATION_POST_APPLICATION_PERMISSION,
+                      new ApplicationPermissionEvent(rhythmManager.name(),
+                      org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT)));
 
-        try (final AutoUserContext ignored2 = new AutoUserContext(schedulerUser.getIdentifier(), schedulerUserAuthentication.getAccessToken())) {
-          identityManager.api().setApplicationPermissionEnabledForUser(
-                  rhythmManager.name(),
-                  org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT,
-                  schedulerUser.getIdentifier(),
-                  true);
-          Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_PUT_APPLICATION_PERMISSION_USER_ENABLED, new ApplicationPermissionUserEvent(rhythmManager.name(), org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT, schedulerUser.getIdentifier())));
-        }
-
-        provisionApp(tenant, ledgerManager, org.apache.fineract.cn.accounting.api.v1.EventConstants.INITIALIZE);
-
-        provisionApp(tenant, portfolioManager, org.apache.fineract.cn.portfolio.api.v1.events.EventConstants.INITIALIZE);
-
-        Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_PERMITTABLE_GROUP,
-                org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name())));
-
-        for (int i = 0; i < 24; i++) {
-          Assert.assertTrue("Beat #" + i,
-                  eventRecorder.wait(org.apache.fineract.cn.rhythm.api.v1.events.EventConstants.POST_BEAT,
-                          new BeatEvent(portfolioManager.name(), "alignment" + i)));
-        }
-
-        final Authentication schedulerAuthentication;
-        try (final AutoGuest ignored2 = new AutoGuest()) {
-          schedulerAuthentication = identityManager.api().login(schedulerUser.getIdentifier(), schedulerUser.getPassword());
-        }
-
-        try (final AutoUserContext ignored2 = new AutoUserContext(schedulerUser.getIdentifier(), schedulerAuthentication.getAccessToken())) {
-          //Allow rhythm to send a beat to portfolio as the scheduler user.
-          identityManager.api().setApplicationPermissionEnabledForUser(
-                  rhythmManager.name(),
-                  org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()),
-                  schedulerUser.getIdentifier(),
-                  true);
-          Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_PUT_APPLICATION_PERMISSION_USER_ENABLED,
-                  new ApplicationPermissionUserEvent(rhythmManager.name(),
-                          org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()), schedulerUser.getIdentifier())));
-        }
-
-        provisionApp(tenant, depositAccountManager, org.apache.fineract.cn.deposit.api.v1.EventConstants.INITIALIZE);
-
-        provisionApp(tenant, ServiceRunner.tellerManager, org.apache.fineract.cn.teller.api.v1.EventConstants.INITIALIZE);
-
-        provisionApp(tenant, ServiceRunner.reportManager, org.apache.fineract.cn.reporting.api.v1.EventConstants.INITIALIZE);
-
-        provisionApp(tenant, ServiceRunner.chequeManager, org.apache.fineract.cn.cheque.api.v1.EventConstants.INITIALIZE);
-
-        provisionApp(tenant, ServiceRunner.payrollManager, org.apache.fineract.cn.payroll.api.v1.EventConstants.INITIALIZE);
-
-        provisionApp(tenant, ServiceRunner.groupManager, org.apache.fineract.cn.group.api.v1.EventConstants.INITIALIZE);
-
-        provisionApp(tenant, ServiceRunner.notificationManager, org.apache.fineract.cn.notification.api.v1.events.NotificationEventConstants.INITIALIZE);
-
-        createNotificationsAdmin(tenantAdminPassword.getAdminPassword());
-
-        createChartOfAccounts(orgAdminUserPassword);
+      final Authentication schedulerUserAuthentication;
+      try (final AutoGuest ignored2 = new AutoGuest()) {
+        enableUser(schedulerUser);
+        schedulerUserAuthentication = identityManager.api().login(schedulerUser.getIdentifier(), schedulerUser.getPassword());
       }
+
+      try (final AutoUserContext ignored2 = new AutoUserContext(schedulerUser.getIdentifier(), schedulerUserAuthentication.getAccessToken())) {
+        identityManager.api().setApplicationPermissionEnabledForUser(
+                rhythmManager.name(),
+                org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT,
+                schedulerUser.getIdentifier(),
+                true);
+        Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_PUT_APPLICATION_PERMISSION_USER_ENABLED, new ApplicationPermissionUserEvent(rhythmManager.name(), org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT, schedulerUser.getIdentifier())));
+      }
+
+      provisionApp(tenant, ServiceRunner.organizationManager, org.apache.fineract.cn.office.api.v1.EventConstants.INITIALIZE);
+
+      provisionApp(tenant, ledgerManager, org.apache.fineract.cn.accounting.api.v1.EventConstants.INITIALIZE);
+
+      provisionApp(tenant, portfolioManager, org.apache.fineract.cn.portfolio.api.v1.events.EventConstants.INITIALIZE);
+
+      Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_PERMITTABLE_GROUP,
+              org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name())));
+
+      for (int i = 0; i < 24; i++) {
+        Assert.assertTrue("Beat #" + i,
+                eventRecorder.wait(org.apache.fineract.cn.rhythm.api.v1.events.EventConstants.POST_BEAT,
+                        new BeatEvent(portfolioManager.name(), "alignment" + i)));
+      }
+
+      final Authentication schedulerAuthentication;
+      try (final AutoGuest ignored2 = new AutoGuest()) {
+        schedulerAuthentication = identityManager.api().login(schedulerUser.getIdentifier(), schedulerUser.getPassword());
+      }
+
+      try (final AutoUserContext ignored2 = new AutoUserContext(schedulerUser.getIdentifier(), schedulerAuthentication.getAccessToken())) {
+        //Allow rhythm to send a beat to portfolio as the scheduler user.
+        identityManager.api().setApplicationPermissionEnabledForUser(
+                rhythmManager.name(),
+                org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()),
+                schedulerUser.getIdentifier(),
+                true);
+        Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_PUT_APPLICATION_PERMISSION_USER_ENABLED,
+                new ApplicationPermissionUserEvent(rhythmManager.name(),
+                        org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()), schedulerUser.getIdentifier())));
+      }
+
+      provisionApp(tenant, ServiceRunner.customerManager, CustomerEventConstants.INITIALIZE);
+
+      provisionApp(tenant, depositAccountManager, org.apache.fineract.cn.deposit.api.v1.EventConstants.INITIALIZE);
+
+      provisionApp(tenant, ServiceRunner.tellerManager, org.apache.fineract.cn.teller.api.v1.EventConstants.INITIALIZE);
+
+      provisionApp(tenant, ServiceRunner.reportManager, org.apache.fineract.cn.reporting.api.v1.EventConstants.INITIALIZE);
+
+      provisionApp(tenant, ServiceRunner.chequeManager, org.apache.fineract.cn.cheque.api.v1.EventConstants.INITIALIZE);
+
+      provisionApp(tenant, ServiceRunner.payrollManager, org.apache.fineract.cn.payroll.api.v1.EventConstants.INITIALIZE);
+
+      provisionApp(tenant, ServiceRunner.groupManager, org.apache.fineract.cn.group.api.v1.EventConstants.INITIALIZE);
+
+      provisionApp(tenant, ServiceRunner.notificationManager, org.apache.fineract.cn.notification.api.v1.events.NotificationEventConstants.INITIALIZE);
+
+      logger.info("Creating users");
+
+      final UserWithPassword orgAdminUserPassword = createOrgAdminRoleAndUser(tenantAdminPassword.getAdminPassword());
+
+      createInteroperationRoleAndUser(tenantAdminPassword.getAdminPassword());
+      createNotificationsAdmin(tenantAdminPassword.getAdminPassword());
+
+      createChartOfAccounts(orgAdminUserPassword);
+
+      provisionApp(tenant, interoperationManager, org.apache.fineract.cn.interoperation.api.v1.EventConstants.INITIALIZE);
 
       return tenantAdminPassword.getAdminPassword();
     }
@@ -510,6 +564,7 @@ public class ServiceRunner {
       authentication = identityManager.api().login(userWithPassword.getIdentifier(), userWithPassword.getPassword());
     }
 
+    // TODO: externalize this thing
     try (final AutoUserContext ignored = new AutoUserContext(userWithPassword.getIdentifier(), authentication.getAccessToken())) {
       final LedgerImporter ledgerImporter = new LedgerImporter(ledgerManager.api(), logger);
       final URL ledgersUrl = ServiceRunner.class.getResource("/standardChartOfAccounts/ledgers.csv");
@@ -518,6 +573,7 @@ public class ServiceRunner {
 
       final AccountImporter accountImporter = new AccountImporter(ledgerManager.api(), logger);
       final URL accountsUrl = ServiceRunner.class.getResource("/standardChartOfAccounts/accounts.csv");
+      logger.info("Load chart of accounts '{}'", accountsUrl);
       accountImporter.importCSV(accountsUrl);
       Assert.assertTrue(this.eventRecorder.wait(POST_ACCOUNT, "9330"));
 
@@ -569,17 +625,13 @@ public class ServiceRunner {
   }
 
   private Role defineSchedulerRole() {
-    final Permission permissionRequestionCreationPermission = new Permission();
-    permissionRequestionCreationPermission.setAllowedOperations(Collections.singleton(AllowedOperation.CHANGE));
-    permissionRequestionCreationPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT);
+    final Permission permissionRequestionCreationPermission = getPermission(AllowedOperation.CHANGE, org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT);
 
-    final Permission beatPublishToPortfolioPermission = new Permission();
-    beatPublishToPortfolioPermission.setAllowedOperations(Collections.singleton(AllowedOperation.CHANGE));
-    beatPublishToPortfolioPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()));
+    final Permission beatPublishToPortfolioPermission = getPermission(AllowedOperation.CHANGE, org.apache.fineract.cn.rhythm.spi.v1.PermittableGroupIds.forApplication(portfolioManager.name()));
 
     final Role role = new Role();
     role.setIdentifier("scheduler");
-    role.setPermissions(Arrays.asList(permissionRequestionCreationPermission, beatPublishToPortfolioPermission));
+    role.setPermissions(Arrays.asList(permissionRequestionCreationPermission /*, beatPublishToPortfolioPermission */)); // TODO: temp fix
 
     return role;
   }
@@ -597,8 +649,8 @@ public class ServiceRunner {
       Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_ROLE, fimsAdministratorRole.getIdentifier()));
 
       final UserWithPassword fimsAdministratorUser = new UserWithPassword();
-      fimsAdministratorUser.setIdentifier("operator");
-      fimsAdministratorUser.setPassword(Base64Utils.encodeToString("init1@l".getBytes()));
+      fimsAdministratorUser.setIdentifier(ADMINISTRATOR_USER);
+      fimsAdministratorUser.setPassword(Base64Utils.encodeToString(ADMINISTRATOR_PASS.getBytes()));
       fimsAdministratorUser.setRole(fimsAdministratorRole.getIdentifier());
 
       ServiceRunner.identityManager.api().createUser(fimsAdministratorUser);
@@ -611,50 +663,113 @@ public class ServiceRunner {
     }
   }
 
+  private UserWithPassword createInteroperationRoleAndUser(final String tenantAdminPassword) throws InterruptedException {
+    final Authentication adminAuthentication;
+    try (final AutoUserContext ignored = new AutoGuest()) {
+      adminAuthentication = ServiceRunner.identityManager.api().login(ADMIN_USER_NAME, tenantAdminPassword);
+    }
+
+    try (final AutoUserContext ignored = new AutoUserContext(ADMIN_USER_NAME, adminAuthentication.getAccessToken())) {
+      final Role role = createInteroperationRole();
+
+      ServiceRunner.identityManager.api().createRole(role);
+      Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_ROLE, role.getIdentifier()));
+
+      final UserWithPassword interoperationUser = new UserWithPassword();
+      interoperationUser.setIdentifier(INTEROPERATION_USER);
+      interoperationUser.setPassword(Base64Utils.encodeToString(INTEROPERATION_PASS.getBytes()));
+      interoperationUser.setRole(role.getIdentifier());
+
+      ServiceRunner.identityManager.api().createUser(interoperationUser);
+      Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_USER, interoperationUser.getIdentifier()));
+
+      ServiceRunner.identityManager.api().logout();
+
+      enableUser(interoperationUser);
+      return interoperationUser;
+    }
+  }
+
   private Role defineOrgAdministratorRole() {
-    final Permission employeeAllPermission = new Permission();
-    employeeAllPermission.setAllowedOperations(AllowedOperation.ALL);
-    employeeAllPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.office.api.v1.PermittableGroupIds.EMPLOYEE_MANAGEMENT);
+    ArrayList<Permission> permissions = new ArrayList<>();
 
-    final Permission officeAllPermission = new Permission();
-    officeAllPermission.setAllowedOperations(AllowedOperation.ALL);
-    officeAllPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.office.api.v1.PermittableGroupIds.OFFICE_MANAGEMENT);
-
-    final Permission userAllPermission = new Permission();
-    userAllPermission.setAllowedOperations(AllowedOperation.ALL);
-    userAllPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.IDENTITY_MANAGEMENT);
-
-    final Permission roleAllPermission = new Permission();
-    roleAllPermission.setAllowedOperations(AllowedOperation.ALL);
-    roleAllPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.ROLE_MANAGEMENT);
-
-    final Permission selfManagementPermission = new Permission();
-    selfManagementPermission.setAllowedOperations(AllowedOperation.ALL);
-    selfManagementPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.SELF_MANAGEMENT);
-
-    final Permission ledgerManagementPermission = new Permission();
-    ledgerManagementPermission.setAllowedOperations(AllowedOperation.ALL);
-    ledgerManagementPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.accounting.api.v1.PermittableGroupIds.THOTH_LEDGER);
-
-    final Permission accountManagementPermission = new Permission();
-    accountManagementPermission.setAllowedOperations(AllowedOperation.ALL);
-    accountManagementPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.accounting.api.v1.PermittableGroupIds.THOTH_ACCOUNT);
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.office.api.v1.PermittableGroupIds.EMPLOYEE_MANAGEMENT));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.office.api.v1.PermittableGroupIds.OFFICE_MANAGEMENT));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.office.api.v1.PermittableGroupIds.SELF_MANAGEMENT));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.IDENTITY_MANAGEMENT));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.ROLE_MANAGEMENT));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.SELF_MANAGEMENT));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.deposit.api.v1.PermittableGroupIds.DEFINITION_MANAGEMENT));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.deposit.api.v1.PermittableGroupIds.INSTANCE_MANAGEMENT));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.accounting.api.v1.PermittableGroupIds.THOTH_ACCOUNT));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.accounting.api.v1.PermittableGroupIds.THOTH_FIN_CONDITION));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.accounting.api.v1.PermittableGroupIds.THOTH_INCOME_STMT));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.accounting.api.v1.PermittableGroupIds.THOTH_JOURNAL));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.accounting.api.v1.PermittableGroupIds.THOTH_LEDGER));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.accounting.api.v1.PermittableGroupIds.THOTH_TX_TYPES));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.portfolio.api.v1.PermittableGroupIds.PRODUCT_LOSS_PROVISIONING_MANAGEMENT));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.portfolio.api.v1.PermittableGroupIds.PRODUCT_OPERATIONS_MANAGEMENT));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.portfolio.api.v1.PermittableGroupIds.PRODUCT_MANAGEMENT));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.portfolio.api.v1.PermittableGroupIds.CASE_DOCUMENT_MANAGEMENT));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.portfolio.api.v1.PermittableGroupIds.CASE_MANAGEMENT));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.portfolio.api.v1.PermittableGroupIds.CASE_STATUS));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.customer.PermittableGroupIds.CATALOG));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.customer.PermittableGroupIds.DOCUMENTS));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.customer.PermittableGroupIds.IDENTIFICATIONS));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.customer.PermittableGroupIds.PORTRAIT));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.customer.PermittableGroupIds.CUSTOMER));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.customer.PermittableGroupIds.TASK));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.cheque.api.v1.PermittableGroupIds.CHEQUE_MANAGEMENT));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.cheque.api.v1.PermittableGroupIds.CHEQUE_TRANSACTION));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.teller.api.v1.PermittableGroupIds.TELLER_MANAGEMENT));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.teller.api.v1.PermittableGroupIds.TELLER_OPERATION));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.interoperation.api.v1.PermittableGroupIds.INTEROPERATION_SINGLE));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.interoperation.api.v1.PermittableGroupIds.INTEROPERATION_BULK));
 
     final Role role = new Role();
-    role.setIdentifier("orgadmin");
-    role.setPermissions(
-        Arrays.asList(
-            employeeAllPermission,
-            officeAllPermission,
-            userAllPermission,
-            roleAllPermission,
-            selfManagementPermission,
-            ledgerManagementPermission,
-            accountManagementPermission
-        )
-    );
+    role.setIdentifier(ADMINISTRATOR_ROLE);
+    role.setPermissions(permissions);
 
     return role;
+  }
+
+  private Role createInteroperationRole() {
+    ArrayList<Permission> permissions = new ArrayList<>();
+
+    permissions.add(getPermission(AllowedOperation.READ, org.apache.fineract.cn.office.api.v1.PermittableGroupIds.EMPLOYEE_MANAGEMENT));
+    permissions.add(getPermission(AllowedOperation.READ, org.apache.fineract.cn.office.api.v1.PermittableGroupIds.OFFICE_MANAGEMENT));
+    permissions.add(getPermission(AllowedOperation.READ, org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.IDENTITY_MANAGEMENT));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.ROLE_MANAGEMENT));
+    permissions.add(getPermission(AllowedOperation.READ, org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.SELF_MANAGEMENT));
+    permissions.add(getPermission(AllowedOperation.READ, org.apache.fineract.cn.deposit.api.v1.PermittableGroupIds.DEFINITION_MANAGEMENT));
+    permissions.add(getPermission(AllowedOperation.READ, org.apache.fineract.cn.deposit.api.v1.PermittableGroupIds.INSTANCE_MANAGEMENT));
+    permissions.add(getPermission(AllowedOperation.READ, org.apache.fineract.cn.accounting.api.v1.PermittableGroupIds.THOTH_ACCOUNT));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.accounting.api.v1.PermittableGroupIds.THOTH_JOURNAL));
+    permissions.add(getPermission(AllowedOperation.READ, org.apache.fineract.cn.accounting.api.v1.PermittableGroupIds.THOTH_LEDGER));
+    permissions.add(getPermission(AllowedOperation.READ, org.apache.fineract.cn.accounting.api.v1.PermittableGroupIds.THOTH_TX_TYPES));
+    permissions.add(getPermission(AllowedOperation.READ, org.apache.fineract.cn.portfolio.api.v1.PermittableGroupIds.PRODUCT_OPERATIONS_MANAGEMENT));
+    permissions.add(getPermission(AllowedOperation.READ, org.apache.fineract.cn.portfolio.api.v1.PermittableGroupIds.PRODUCT_MANAGEMENT));
+    permissions.add(getPermission(AllowedOperation.READ, org.apache.fineract.cn.customer.PermittableGroupIds.PORTRAIT));
+    permissions.add(getPermission(AllowedOperation.READ, org.apache.fineract.cn.customer.PermittableGroupIds.CUSTOMER));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.interoperation.api.v1.PermittableGroupIds.INTEROPERATION_SINGLE));
+    permissions.add(getPermission(AllowedOperation.ALL, org.apache.fineract.cn.interoperation.api.v1.PermittableGroupIds.INTEROPERATION_BULK));
+
+    final Role role = new Role();
+    role.setIdentifier(INTEROPERATION_ROLE);
+    role.setPermissions(permissions);
+
+    return role;
+  }
+
+  private Permission getPermission(Set<AllowedOperation> operations, String permittable) {
+    final Permission permission = new Permission();
+    permission.setAllowedOperations(operations);
+    permission.setPermittableEndpointGroupIdentifier(permittable);
+    return permission;
+  }
+
+  private Permission getPermission(AllowedOperation operation, String permittable) {
+    return getPermission(Collections.singleton(operation), permittable);
   }
 
   private UserWithPassword createNotificationsAdmin(final String tenantAdminPassword) throws InterruptedException {
@@ -685,9 +800,7 @@ public class ServiceRunner {
   }
 
   private Role defineNotificationRole() {
-    final Permission customerPermission = new Permission();
-    customerPermission.setAllowedOperations(Collections.singleton(AllowedOperation.READ));
-    customerPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.customer.PermittableGroupIds.CUSTOMER);
+    final Permission customerPermission = getPermission(AllowedOperation.READ, org.apache.fineract.cn.customer.PermittableGroupIds.CUSTOMER);
 
     final Role role = new Role();
     role.setIdentifier(NOTIFICATION_ROLE);
@@ -716,6 +829,10 @@ public class ServiceRunner {
   }
 
   private void setAdditionalProperties(final ExtraProperties properties) {
+    if (this.environment.containsProperty(ServiceRunner.JAR_DIR_PROP)) {
+      properties.setProperty(ServiceRunner.JAR_DIR_PROP, this.environment.getProperty(ServiceRunner.JAR_DIR_PROP));
+    }
+
     if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + CassandraConnectorConstants.CONTACT_POINTS_PROP)) {
       properties.setProperty(CassandraConnectorConstants.CONTACT_POINTS_PROP, this.environment.getProperty(ServiceRunner.CUSTOM_PROP_PREFIX + CassandraConnectorConstants.CONTACT_POINTS_PROP));
     }
@@ -730,6 +847,10 @@ public class ServiceRunner {
 
     if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_HOST_PROP)) {
       properties.setProperty(MariaDBConstants.MARIADB_HOST_PROP, this.environment.getProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_HOST_PROP));
+    }
+
+    if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_PORT_PROP)) {
+      properties.setProperty(MariaDBConstants.MARIADB_PORT_PROP, this.environment.getProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_PORT_PROP));
     }
 
     if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_USER_PROP)) {

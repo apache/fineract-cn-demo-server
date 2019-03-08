@@ -50,7 +50,8 @@ ext.versions = [
         fineractcndeposit       : '0.1.0-BUILD-SNAPSHOT',
         fineractcnteller        : '0.1.0-BUILD-SNAPSHOT',
         fineractcnreporting     : '0.1.0-BUILD-SNAPSHOT',
-        fineractcncheques       : '0.1.0-BUILD-SNAPSHOT',
+        fineractcninteroperation     : '0.1.0-BUILD-SNAPSHOT',
+        kuelapcheques           : '0.1.0-BUILD-SNAPSHOT',
         fineractcnpayroll       : '0.1.0-BUILD-SNAPSHOT',
         fineractcngroup         : '0.1.0-BUILD-SNAPSHOT',
         fineractcnnotification  : '0.1.0-BUILD-SNAPSHOT',
@@ -112,6 +113,8 @@ dependencies {
             [group: 'org.apache.fineract.cn.payroll', name: 'api', version: versions.fineractcnpayroll],
             [group: 'org.apache.fineract.cn.group', name: 'api', version: versions.fineractcngroup],
             [group: 'org.apache.fineract.cn.notification', name: 'api', version: versions.fineractcnnotification],
+            [group: 'org.apache.fineract.cn.interoperation', name: 'api', version: versions.fineractcninteroperation],
+            // << add you new service Here >>
 
             [group: 'org.apache.fineract.cn.anubis', name: 'api', version: versions.frameworkanubis],
             [group: 'org.apache.fineract.cn.anubis', name: 'test', version: versions.frameworkanubis],
