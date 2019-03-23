@@ -19,7 +19,7 @@
 package org.apache.fineract.cn.dev;
 
 import org.apache.fineract.cn.cassandra.util.CassandraConnectorConstants;
-import org.apache.fineract.cn.mariadb.util.MariaDBConstants;
+import org.apache.fineract.cn.postgresql.util.PostgreSQLConstants;
 import org.apache.fineract.cn.test.env.TestEnvironment;
 import org.apache.fineract.cn.provisioner.api.v1.domain.CassandraConnectionInfo;
 import org.apache.fineract.cn.provisioner.api.v1.domain.DatabaseConnectionInfo;
@@ -40,12 +40,12 @@ class TenantBuilder {
 
     final DatabaseConnectionInfo databaseConnectionInfo = new DatabaseConnectionInfo();
 
-    databaseConnectionInfo.setDriverClass("org.mariadb.jdbc.Driver");
+    databaseConnectionInfo.setDriverClass(PostgreSQLConstants.POSTGRESQL_DRIVER_CLASS_DEFAULT);
     databaseConnectionInfo.setDatabaseName(databaseName);
-    databaseConnectionInfo.setHost(testEnvironment.getProperty(MariaDBConstants.MARIADB_HOST_PROP));
-    databaseConnectionInfo.setPort(testEnvironment.getProperty(MariaDBConstants.MARIADB_PORT_PROP));
-    databaseConnectionInfo.setUser(testEnvironment.getProperty(MariaDBConstants.MARIADB_USER_PROP));
-    databaseConnectionInfo.setPassword(testEnvironment.getProperty(MariaDBConstants.MARIADB_PASSWORD_PROP));
+    databaseConnectionInfo.setHost(testEnvironment.getProperty(PostgreSQLConstants.POSTGRESQL_HOST_PROP));
+    databaseConnectionInfo.setPort(testEnvironment.getProperty(PostgreSQLConstants.POSTGRESQL_PORT_PROP));
+    databaseConnectionInfo.setUser(testEnvironment.getProperty(PostgreSQLConstants.POSTGRESQL_USER_PROP));
+    databaseConnectionInfo.setPassword(testEnvironment.getProperty(PostgreSQLConstants.POSTGRESQL_PASSWORD_PROP));
     tenant.setDatabaseConnectionInfo(databaseConnectionInfo);
 
     final CassandraConnectionInfo cassandraConnectionInfo = new CassandraConnectionInfo();

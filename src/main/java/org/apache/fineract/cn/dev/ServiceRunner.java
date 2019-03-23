@@ -18,8 +18,18 @@
  */
 package org.apache.fineract.cn.dev;
 
-import ch.vorburger.mariadb4j.DB;
-import ch.vorburger.mariadb4j.DBConfigurationBuilder;
+import static org.apache.fineract.cn.accounting.api.v1.EventConstants.POST_ACCOUNT;
+import static org.apache.fineract.cn.accounting.api.v1.EventConstants.POST_LEDGER;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
+
+import com.opentable.db.postgres.embedded.EmbeddedPostgres;
 import org.apache.fineract.cn.accounting.api.v1.client.LedgerManager;
 import org.apache.fineract.cn.accounting.importer.AccountImporter;
 import org.apache.fineract.cn.accounting.importer.LedgerImporter;
@@ -47,7 +57,7 @@ import org.apache.fineract.cn.identity.api.v1.events.ApplicationPermissionUserEv
 import org.apache.fineract.cn.identity.api.v1.events.ApplicationSignatureEvent;
 import org.apache.fineract.cn.identity.api.v1.events.EventConstants;
 import org.apache.fineract.cn.lang.AutoTenantContext;
-import org.apache.fineract.cn.mariadb.util.MariaDBConstants;
+import org.apache.fineract.cn.postgresql.util.PostgreSQLConstants;
 import org.apache.fineract.cn.notification.api.v1.client.NotificationManager;
 import org.apache.fineract.cn.office.api.v1.client.OrganizationManager;
 import org.apache.fineract.cn.payroll.api.v1.client.PayrollManager;
@@ -90,17 +100,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.Base64Utils;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Scanner;
-import java.util.concurrent.TimeUnit;
-
-import static org.apache.fineract.cn.accounting.api.v1.EventConstants.POST_ACCOUNT;
-import static org.apache.fineract.cn.accounting.api.v1.EventConstants.POST_LEDGER;
 
 @SuppressWarnings("SpringAutowiredFieldsWarningInspection")
 @RunWith(SpringRunner.class)
@@ -131,7 +131,7 @@ public class ServiceRunner {
   private static Microservice<GroupManager> groupManager;
   private static Microservice<NotificationManager> notificationManager;
 
-  private static DB embeddedMariaDb;
+  private static EmbeddedPostgres embeddedPostgres;
 
   private static final String CUSTOM_PROP_PREFIX = "custom.";
   private boolean runInDebug;
@@ -199,13 +199,8 @@ public class ServiceRunner {
     if (!this.isPersistent) {
       // start embedded Cassandra
       EmbeddedCassandraServerHelper.startEmbeddedCassandra(TimeUnit.SECONDS.toMillis(30L));
-      // start embedded MariaDB
-      ServiceRunner.embeddedMariaDb = DB.newEmbeddedDB(
-          DBConfigurationBuilder.newBuilder()
-              .setPort(3306)
-              .build()
-      );
-      ServiceRunner.embeddedMariaDb.start();
+      // start embedded PostgreSQL
+      ServiceRunner.embeddedPostgres = embeddedPostgres.builder().setPort(5432).start();
     }
 
     ExtraProperties generalProperties = new ExtraProperties();
@@ -291,7 +286,7 @@ public class ServiceRunner {
     ServiceRunner.identityManager.kill();
 
     if (!isPersistent) {
-      ServiceRunner.embeddedMariaDb.stop();
+      ServiceRunner.embeddedPostgres.close();
       EmbeddedCassandraServerHelper.cleanEmbeddedCassandra();
     }
   }
@@ -728,16 +723,16 @@ public class ServiceRunner {
       properties.setProperty(CassandraConnectorConstants.CLUSTER_PASSWORD_PROP, this.environment.getProperty(CassandraConnectorConstants.CLUSTER_PASSWORD_PROP));
     }
 
-    if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_HOST_PROP)) {
-      properties.setProperty(MariaDBConstants.MARIADB_HOST_PROP, this.environment.getProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_HOST_PROP));
+    if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + PostgreSQLConstants.POSTGRESQL_HOST_PROP)) {
+      properties.setProperty(PostgreSQLConstants.POSTGRESQL_HOST_PROP, this.environment.getProperty(ServiceRunner.CUSTOM_PROP_PREFIX + PostgreSQLConstants.POSTGRESQL_HOST_PROP));
     }
 
-    if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_USER_PROP)) {
-      properties.setProperty(MariaDBConstants.MARIADB_USER_PROP, this.environment.getProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_USER_PROP));
+    if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + PostgreSQLConstants.POSTGRESQL_USER_PROP)) {
+      properties.setProperty(PostgreSQLConstants.POSTGRESQL_USER_PROP, this.environment.getProperty(ServiceRunner.CUSTOM_PROP_PREFIX + PostgreSQLConstants.POSTGRESQL_USER_PROP));
     }
 
-    if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_PASSWORD_PROP)) {
-      properties.setProperty(MariaDBConstants.MARIADB_PASSWORD_PROP, this.environment.getProperty(ServiceRunner.CUSTOM_PROP_PREFIX + MariaDBConstants.MARIADB_PASSWORD_PROP));
+    if (this.environment.containsProperty(ServiceRunner.CUSTOM_PROP_PREFIX + PostgreSQLConstants.POSTGRESQL_PASSWORD_PROP)) {
+      properties.setProperty(PostgreSQLConstants.POSTGRESQL_PASSWORD_PROP, this.environment.getProperty(ServiceRunner.CUSTOM_PROP_PREFIX + PostgreSQLConstants.POSTGRESQL_PASSWORD_PROP));
     }
   }
 }
