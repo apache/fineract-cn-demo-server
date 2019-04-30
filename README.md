@@ -1,4 +1,4 @@
-# Apache Fineract CN Demo Server
+# Apache Fineract CN Demo Server [![Build Status](https://api.travis-ci.com/apache/fineract-cn-demo-server.svg?branch=develop)](https://travis-ci.com/apache/fineract-cn-demo-server)
 Simple environment used for demo purposes
 
 ## Preconditions
