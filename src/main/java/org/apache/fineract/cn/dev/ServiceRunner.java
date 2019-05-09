@@ -49,6 +49,7 @@ import org.apache.fineract.cn.identity.api.v1.events.EventConstants;
 import org.apache.fineract.cn.lang.AutoTenantContext;
 import org.apache.fineract.cn.mariadb.util.MariaDBConstants;
 import org.apache.fineract.cn.notification.api.v1.client.NotificationManager;
+import org.apache.fineract.cn.notification.api.v1.events.NotificationEventConstants;
 import org.apache.fineract.cn.office.api.v1.client.OrganizationManager;
 import org.apache.fineract.cn.payroll.api.v1.client.PayrollManager;
 import org.apache.fineract.cn.portfolio.api.v1.client.PortfolioManager;
@@ -111,10 +112,6 @@ public class ServiceRunner {
   private static final String ADMIN_USER_NAME = "antony";
   private static final String TEST_LOGGER = "test-logger";
   private static final String LOAN_INCOME_LEDGER = "1100";
-
-  private static final String NOTIFICATION_USER_PASSWORD = "shingi";
-  private static final String NOTIFICATION_ROLE = "notificationAdmin";
-  private static final String NOTIFICATION_USER_IDENTIFIER = "wadaadmin";
 
   private static Microservice<Provisioner> provisionerService;
   private static Microservice<IdentityManager> identityManager;
@@ -238,6 +235,10 @@ public class ServiceRunner {
 
     ServiceRunner.customerManager = new Microservice<>(CustomerManager.class, "customer", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
     startService(generalProperties, customerManager);
+  
+  
+    ServiceRunner.notificationManager = new Microservice<>(NotificationManager.class, "notification", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+    startService(generalProperties, ServiceRunner.notificationManager);
 
     if(!liteModeEnabled) {
       ServiceRunner.ledgerManager = new Microservice<>(LedgerManager.class, "accounting", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
@@ -267,15 +268,12 @@ public class ServiceRunner {
       ServiceRunner.groupManager = new Microservice<>(GroupManager.class, "group", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
       startService(generalProperties, ServiceRunner.groupManager);
 
-      ServiceRunner.notificationManager = new Microservice<>(NotificationManager.class, "notification", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-      startService(generalProperties, ServiceRunner.notificationManager);
     }
   }
 
   @After
   public void tearDown() throws Exception {
     if(!liteModeEnabled) {
-      ServiceRunner.notificationManager.kill();
       ServiceRunner.groupManager.kill();
       ServiceRunner.payrollManager.kill();
       ServiceRunner.chequeManager.kill();
@@ -285,6 +283,7 @@ public class ServiceRunner {
       ServiceRunner.portfolioManager.kill();
       ServiceRunner.ledgerManager.kill();
     }
+    ServiceRunner.notificationManager.kill();
     ServiceRunner.customerManager.kill();
     ServiceRunner.organizationManager.kill();
     ServiceRunner.rhythmManager.kill();
@@ -312,6 +311,8 @@ public class ServiceRunner {
     System.out.println(identityManager.toString());
     System.out.println(organizationManager.toString());
     System.out.println(customerManager.toString());
+    System.out.println(notificationManager.toString());
+  
     if(!liteModeEnabled) {
       System.out.println(ledgerManager.toString());
       System.out.println(portfolioManager.toString());
@@ -321,7 +322,6 @@ public class ServiceRunner {
       System.out.println(chequeManager.toString());
       System.out.println(payrollManager.toString());
       System.out.println(groupManager.toString());
-      System.out.println(notificationManager.toString());
     }
 
     boolean run = true;
@@ -378,6 +378,8 @@ public class ServiceRunner {
     applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.rhythmManager.name(), ServiceRunner.rhythmManager.uri()));
     applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.organizationManager.name(), ServiceRunner.organizationManager.uri()));
     applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.customerManager.name(), ServiceRunner.customerManager.uri()));
+    applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.notificationManager.name(), ServiceRunner.notificationManager.uri()));
+  
     if (!liteModeEnabled) {
       applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.ledgerManager.name(), ServiceRunner.ledgerManager.uri()));
       applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.portfolioManager.name(), ServiceRunner.portfolioManager.uri()));
@@ -387,7 +389,6 @@ public class ServiceRunner {
       applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.chequeManager.name(), ServiceRunner.chequeManager.uri()));
       applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.payrollManager.name(), ServiceRunner.payrollManager.uri()));
       applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.groupManager.name(), ServiceRunner.groupManager.uri()));
-      applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.notificationManager.name(), ServiceRunner.notificationManager.uri()));
     }
 
 
@@ -424,8 +425,8 @@ public class ServiceRunner {
       provisionApp(tenant, ServiceRunner.organizationManager, org.apache.fineract.cn.office.api.v1.EventConstants.INITIALIZE);
       provisionApp(tenant, ServiceRunner.customerManager, CustomerEventConstants.INITIALIZE);
 
-
       final UserWithPassword orgAdminUserPassword = createOrgAdminRoleAndUser(tenantAdminPassword.getAdminPassword());
+      provisionApp(tenant, ServiceRunner.notificationManager, NotificationEventConstants.INITIALIZE);
 
       //Creation of the schedulerUserRole, and permitting it to create application permission requests are needed in the
       //provisioning of portfolio.  Portfolio asks rhythm for a callback.  Rhythm asks identity for permission to send
@@ -493,10 +494,7 @@ public class ServiceRunner {
 
         provisionApp(tenant, ServiceRunner.groupManager, org.apache.fineract.cn.group.api.v1.EventConstants.INITIALIZE);
 
-        provisionApp(tenant, ServiceRunner.notificationManager, org.apache.fineract.cn.notification.api.v1.events.NotificationEventConstants.INITIALIZE);
-
-        createNotificationsAdmin(tenantAdminPassword.getAdminPassword());
-
+        
         createChartOfAccounts(orgAdminUserPassword);
       }
 
@@ -639,7 +637,11 @@ public class ServiceRunner {
     final Permission accountManagementPermission = new Permission();
     accountManagementPermission.setAllowedOperations(AllowedOperation.ALL);
     accountManagementPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.accounting.api.v1.PermittableGroupIds.THOTH_ACCOUNT);
-
+  
+    final Permission customerPermission = new Permission();
+    customerPermission.setAllowedOperations(Collections.singleton(AllowedOperation.READ));
+    customerPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.customer.PermittableGroupIds.CUSTOMER);
+    
     final Role role = new Role();
     role.setIdentifier("orgadmin");
     role.setPermissions(
@@ -650,51 +652,11 @@ public class ServiceRunner {
             roleAllPermission,
             selfManagementPermission,
             ledgerManagementPermission,
-            accountManagementPermission
+            accountManagementPermission,
+            customerPermission
         )
     );
 
-    return role;
-  }
-
-  private UserWithPassword createNotificationsAdmin(final String tenantAdminPassword) throws InterruptedException {
-    final Authentication adminAuthentication;
-    try (final AutoUserContext ignored = new AutoGuest()) {
-      adminAuthentication = ServiceRunner.identityManager.api().login(ADMIN_USER_NAME, tenantAdminPassword);
-    }
-
-    try (final AutoUserContext ignored = new AutoUserContext(ADMIN_USER_NAME, adminAuthentication.getAccessToken())) {
-      final Role notificationRole = defineNotificationRole();
-
-      ServiceRunner.identityManager.api().createRole(notificationRole);
-      Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_ROLE, notificationRole.getIdentifier()));
-
-      final UserWithPassword notificationUser = new UserWithPassword();
-      notificationUser.setIdentifier(NOTIFICATION_USER_IDENTIFIER);
-      notificationUser.setPassword(Base64Utils.encodeToString(NOTIFICATION_USER_PASSWORD.getBytes()));
-      notificationUser.setRole(notificationRole.getIdentifier());
-
-      ServiceRunner.identityManager.api().createUser(notificationUser);
-      Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_USER, notificationUser.getIdentifier()));
-
-      ServiceRunner.identityManager.api().logout();
-
-      enableUser(notificationUser);
-      return notificationUser;
-    }
-  }
-
-  private Role defineNotificationRole() {
-    final Permission customerPermission = new Permission();
-    customerPermission.setAllowedOperations(Collections.singleton(AllowedOperation.READ));
-    customerPermission.setPermittableEndpointGroupIdentifier(org.apache.fineract.cn.customer.PermittableGroupIds.CUSTOMER);
-
-    final Role role = new Role();
-    role.setIdentifier(NOTIFICATION_ROLE);
-    role.setPermissions(Arrays.asList(
-        customerPermission
-        )
-    );
     return role;
   }
 
