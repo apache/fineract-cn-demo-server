@@ -38,7 +38,7 @@ get_modules() {
   done
 }
 
-get_modules fineract-cn-lang fineract-cn-api fineract-cn-async fineract-cn-cassandra fineract-cn-postgresql fineract-cn-command
+get_modules fineract-cn-lang fineract-cn-api fineract-cn-async fineract-cn-cassandra fineract-cn-command fineract-cn-postgresql
 
 # REM clone fineract-cn-test FINCN-114
 git clone https://github.com/Izakey/fineract-cn-test.git -b FINCN-114
@@ -108,18 +108,18 @@ chmod +x gradlew
 ./gradlew publishToMavenLocal
 cd ..
 
-# REM clone fineract-cn-accounting FINCN-121
-git clone https://github.com/Izakey/fineract-cn-accounting.git -b FINCN-121
-cd fineract-cn-accounting
-git remote add upstream https://github.com/Izakey/fineract-cn-accounting.git
+# REM clone fineract-cn-group FINCN-118
+git clone https://github.com/Izakey/fineract-cn-group.git -b FINCN-118
+cd fineract-cn-group
+git remote add upstream https://github.com/Izakey/fineract-cn-group.git
 chmod +x gradlew
 ./gradlew publishToMavenLocal
 cd ..
 
-# REM clone fineract-cn-portfolio FINCN-124
-git clone https://github.com/Izakey/fineract-cn-portfolio.git -b FINCN-124
-cd fineract-cn-portfolio
-git remote add upstream https://github.com/Izakey/fineract-cn-portfolio.git
+# REM clone fineract-cn-accounting FINCN-121
+git clone https://github.com/Izakey/fineract-cn-accounting.git -b FINCN-121
+cd fineract-cn-accounting
+git remote add upstream https://github.com/Izakey/fineract-cn-accounting.git
 chmod +x gradlew
 ./gradlew publishToMavenLocal
 cd ..
@@ -132,18 +132,10 @@ chmod +x gradlew
 ./gradlew publishToMavenLocal
 cd ..
 
-# REM clone fineract-cn-teller FINCN-126
-git clone https://github.com/Izakey/fineract-cn-teller.git -b FINCN-126
-cd fineract-cn-teller
-git remote add upstream https://github.com/Izakey/fineract-cn-teller.git
-chmod +x gradlew
-./gradlew publishToMavenLocal
-cd ..
-
-# REM clone fineract-cn-reporting FINCN-119
-git clone https://github.com/Izakey/fineract-cn-reporting.git -b FINCN-119
-cd fineract-cn-reporting
-git remote add upstream https://github.com/Izakey/fineract-cn-reporting.git
+# REM clone fineract-cn-portfolio FINCN-124
+git clone https://github.com/Izakey/fineract-cn-portfolio.git -b FINCN-124
+cd fineract-cn-portfolio
+git remote add upstream https://github.com/Izakey/fineract-cn-portfolio.git
 chmod +x gradlew
 ./gradlew publishToMavenLocal
 cd ..
@@ -164,10 +156,18 @@ chmod +x gradlew
 ./gradlew publishToMavenLocal
 cd ..
 
-# REM clone fineract-cn-group FINCN-118
-git clone https://github.com/Izakey/fineract-cn-group.git -b FINCN-118
-cd fineract-cn-group
-git remote add upstream https://github.com/Izakey/fineract-cn-group.git
+# REM clone fineract-cn-teller FINCN-126
+git clone https://github.com/Izakey/fineract-cn-teller.git -b FINCN-126
+cd fineract-cn-teller
+git remote add upstream https://github.com/Izakey/fineract-cn-teller.git
+chmod +x gradlew
+./gradlew publishToMavenLocal
+cd ..
+
+# REM clone fineract-cn-reporting FINCN-119
+git clone https://github.com/Izakey/fineract-cn-reporting.git -b FINCN-119
+cd fineract-cn-reporting
+git remote add upstream https://github.com/Izakey/fineract-cn-reporting.git
 chmod +x gradlew
 ./gradlew publishToMavenLocal
 cd ..

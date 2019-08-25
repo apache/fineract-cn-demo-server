@@ -24,3 +24,5 @@ gradle-app.setting
 .DS_Store
 scripts/.DS_Store
 src/.DS_Store
+
+out/
