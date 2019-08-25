@@ -76,8 +76,8 @@ chmod +x gradlew
 ./gradlew publishToMavenLocal
 cd ..
 
-# REM clone fineract-cn-rhythm FINCN115
-git clone https://github.com/Izakey/fineract-cn-rhythm.git -b FINCN115
+# REM clone fineract-cn-rhythm FINCN-115
+git clone https://github.com/Izakey/fineract-cn-rhythm.git -b FINCN-115
 cd fineract-cn-rhythm
 git remote add upstream https://github.com/apache/fineract-cn-rhythm.git
 chmod +x gradlew
