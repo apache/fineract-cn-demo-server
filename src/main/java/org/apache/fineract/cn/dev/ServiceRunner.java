@@ -21,15 +21,15 @@ package org.apache.fineract.cn.dev;
 import static org.apache.fineract.cn.accounting.api.v1.EventConstants.POST_ACCOUNT;
 import static org.apache.fineract.cn.accounting.api.v1.EventConstants.POST_LEDGER;
 
+import com.opentable.db.postgres.embedded.EmbeddedPostgres;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
-
-import com.opentable.db.postgres.embedded.EmbeddedPostgres;
 import org.apache.fineract.cn.accounting.api.v1.client.LedgerManager;
 import org.apache.fineract.cn.accounting.importer.AccountImporter;
 import org.apache.fineract.cn.accounting.importer.LedgerImporter;
@@ -54,14 +54,13 @@ import org.apache.fineract.cn.identity.api.v1.domain.Role;
 import org.apache.fineract.cn.identity.api.v1.domain.UserWithPassword;
 import org.apache.fineract.cn.identity.api.v1.events.ApplicationPermissionEvent;
 import org.apache.fineract.cn.identity.api.v1.events.ApplicationPermissionUserEvent;
-import org.apache.fineract.cn.identity.api.v1.events.ApplicationSignatureEvent;
 import org.apache.fineract.cn.identity.api.v1.events.EventConstants;
 import org.apache.fineract.cn.lang.AutoTenantContext;
-import org.apache.fineract.cn.postgresql.util.PostgreSQLConstants;
 import org.apache.fineract.cn.notification.api.v1.client.NotificationManager;
 import org.apache.fineract.cn.office.api.v1.client.OrganizationManager;
 import org.apache.fineract.cn.payroll.api.v1.client.PayrollManager;
 import org.apache.fineract.cn.portfolio.api.v1.client.PortfolioManager;
+import org.apache.fineract.cn.postgresql.util.PostgreSQLConstants;
 import org.apache.fineract.cn.provisioner.api.v1.client.Provisioner;
 import org.apache.fineract.cn.provisioner.api.v1.domain.Application;
 import org.apache.fineract.cn.provisioner.api.v1.domain.AssignedApplication;
@@ -73,7 +72,6 @@ import org.apache.fineract.cn.rhythm.api.v1.client.RhythmManager;
 import org.apache.fineract.cn.rhythm.api.v1.events.BeatEvent;
 import org.apache.fineract.cn.teller.api.v1.client.TellerManager;
 import org.apache.fineract.cn.test.env.ExtraProperties;
-import org.apache.fineract.cn.test.fixture.postgresql.PostgreSQLInitializer;
 import org.apache.fineract.cn.test.listener.EnableEventRecording;
 import org.apache.fineract.cn.test.listener.EventRecorder;
 import org.apache.fineract.cn.test.servicestarter.ActiveMQForTest;
@@ -100,8 +98,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.Base64Utils;
-
-import java.util.ArrayList;
 
 @SuppressWarnings("SpringAutowiredFieldsWarningInspection")
 @RunWith(SpringRunner.class)
@@ -199,7 +195,7 @@ public class ServiceRunner {
       // start embedded Cassandra
       EmbeddedCassandraServerHelper.startEmbeddedCassandra(TimeUnit.SECONDS.toMillis(30L));
       // start embedded PostgreSQL
-      ServiceRunner.embeddedPostgres = embeddedPostgres.builder().setPort(5432).start();
+      ServiceRunner.embeddedPostgres = EmbeddedPostgres.builder().setPort(5432).start();
     }
 
     ExtraProperties generalProperties = new ExtraProperties();
