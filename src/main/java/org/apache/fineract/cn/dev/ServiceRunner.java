@@ -107,8 +107,14 @@ import org.springframework.util.Base64Utils;
 @SpringBootTest()
 public class ServiceRunner {
   private static final String CLIENT_ID = "service-runner";
-  private static final String SCHEDULER_USER_NAME = "imhotep";
-  private static final String ADMIN_USER_NAME = "antony";
+
+  private static final String SCHEDULER_USERNAME = "imhotep";
+  private static final String SCHEDULER_PASSWORD = "imhotepPassword";
+  private static final String ADMIN_USERNAME = "antony";
+  private static final String ADMIN_PASSWORD = "antonyPassword";
+  private static final String OPERATOR_USERNAME = "operator";
+  private static final String OPERATOR_PASSWORD = "operatorPassword";
+
   private static final String TEST_LOGGER = "test-logger";
   private static final String LOAN_INCOME_LEDGER = "1100";
 
@@ -254,7 +260,7 @@ public class ServiceRunner {
     ServiceRunner.rhythmManager = new Microservice<>(RhythmManager.class, "rhythm", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT)
         .addProperties(new ExtraProperties() {{
           setProperty("rhythm.beatCheckRate", Long.toString(TimeUnit.MINUTES.toMillis(10)));
-          setProperty("rhythm.user", SCHEDULER_USER_NAME);
+          setProperty("rhythm.user", SCHEDULER_USERNAME);
         }});
     startService(generalProperties, rhythmManager);
 
@@ -270,7 +276,7 @@ public class ServiceRunner {
 
       ServiceRunner.portfolioManager = new Microservice<>(PortfolioManager.class, "portfolio", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT)
           .addProperties(new ExtraProperties() {{
-            setProperty("portfolio.bookLateFeesAndInterestAsUser", SCHEDULER_USER_NAME);
+            setProperty("portfolio.bookLateFeesAndInterestAsUser", SCHEDULER_USERNAME);
           }});
       startService(generalProperties, portfolioManager);
 
@@ -468,12 +474,13 @@ public class ServiceRunner {
       final AssignedApplication isisAssigned = new AssignedApplication();
       isisAssigned.setName(identityManager.name());
 
-      final IdentityManagerInitialization tenantAdminPassword = provisionerService.api().assignIdentityManager(tenant.getIdentifier(), isisAssigned);
+      final IdentityManagerInitialization identityManagerInitResult = provisionerService.api().assignIdentityManager(tenant.getIdentifier(), isisAssigned);
+      String tenantAdminPassword = changeAdminPassword(identityManagerInitResult.getAdminPassword(), ADMIN_PASSWORD);
       provisionApp(tenant, rhythmManager, org.apache.fineract.cn.rhythm.api.v1.events.EventConstants.INITIALIZE);
       provisionApp(tenant, ServiceRunner.organizationManager, org.apache.fineract.cn.office.api.v1.EventConstants.INITIALIZE);
       provisionApp(tenant, ServiceRunner.customerManager, CustomerEventConstants.INITIALIZE);
 
-      final UserWithPassword orgAdminUserPassword = createOrgAdminRoleAndUser(tenantAdminPassword.getAdminPassword());
+      final UserWithPassword orgAdminUserPassword = createOrgAdminRoleAndUser(tenantAdminPassword);
 
       //Creation of the schedulerUserRole, and permitting it to create application permission requests are needed in the
       //provisioning of portfolio.  Portfolio asks rhythm for a callback.  Rhythm asks identity for permission to send
@@ -481,7 +488,7 @@ public class ServiceRunner {
       //the request is made outside of rhythm's initialization.
 
       if (!liteModeEnabled) {
-        final UserWithPassword schedulerUser = createSchedulerUserRoleAndPassword(tenantAdminPassword.getAdminPassword());
+        final UserWithPassword schedulerUser = createSchedulerUserRoleAndPassword(tenantAdminPassword);
         Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_APPLICATION_PERMISSION, new ApplicationPermissionEvent(rhythmManager.name(), org.apache.fineract.cn.identity.api.v1.PermittableGroupIds.APPLICATION_SELF_MANAGEMENT)));
 
         final Authentication schedulerUserAuthentication;
@@ -548,7 +555,7 @@ public class ServiceRunner {
       }
       logger.info("Provisioning completed'.");
 
-      return tenantAdminPassword.getAdminPassword();
+      return tenantAdminPassword;
     }
   }
 
@@ -592,17 +599,17 @@ public class ServiceRunner {
   private UserWithPassword createSchedulerUserRoleAndPassword(String tenantAdminPassword) throws InterruptedException {
     final Authentication adminAuthentication;
     try (final AutoGuest ignored = new AutoGuest()) {
-      adminAuthentication = identityManager.api().login(ADMIN_USER_NAME, tenantAdminPassword);
+      adminAuthentication = identityManager.api().login(ADMIN_USERNAME, tenantAdminPassword);
     }
 
     final UserWithPassword schedulerUser;
-    try (final AutoUserContext ignored = new AutoUserContext(ADMIN_USER_NAME, adminAuthentication.getAccessToken())) {
+    try (final AutoUserContext ignored = new AutoUserContext(ADMIN_USERNAME, adminAuthentication.getAccessToken())) {
       final Role schedulerRole = defineSchedulerRole();
       identityManager.api().createRole(schedulerRole);
 
       schedulerUser = new UserWithPassword();
-      schedulerUser.setIdentifier(SCHEDULER_USER_NAME);
-      schedulerUser.setPassword(encodePassword("26500BC"));
+      schedulerUser.setIdentifier(SCHEDULER_USERNAME);
+      schedulerUser.setPassword(encodePassword(SCHEDULER_PASSWORD));
       schedulerUser.setRole(schedulerRole.getIdentifier());
 
       identityManager.api().createUser(schedulerUser);
@@ -635,18 +642,18 @@ public class ServiceRunner {
   private UserWithPassword createOrgAdminRoleAndUser(final String tenantAdminPassword) throws InterruptedException {
     final Authentication adminAuthentication;
     try (final AutoUserContext ignored = new AutoGuest()) {
-      adminAuthentication = ServiceRunner.identityManager.api().login(ADMIN_USER_NAME, tenantAdminPassword);
+      adminAuthentication = ServiceRunner.identityManager.api().login(ADMIN_USERNAME, tenantAdminPassword);
     }
 
-    try (final AutoUserContext ignored = new AutoUserContext(ADMIN_USER_NAME, adminAuthentication.getAccessToken())) {
+    try (final AutoUserContext ignored = new AutoUserContext(ADMIN_USERNAME, adminAuthentication.getAccessToken())) {
       final Role fimsAdministratorRole = defineOrgAdministratorRole();
 
       ServiceRunner.identityManager.api().createRole(fimsAdministratorRole);
       Assert.assertTrue(this.eventRecorder.wait(EventConstants.OPERATION_POST_ROLE, fimsAdministratorRole.getIdentifier()));
 
       final UserWithPassword fimsAdministratorUser = new UserWithPassword();
-      fimsAdministratorUser.setIdentifier("operator");
-      fimsAdministratorUser.setPassword(Base64Utils.encodeToString("init1@l".getBytes()));
+      fimsAdministratorUser.setIdentifier(OPERATOR_USERNAME);
+      fimsAdministratorUser.setPassword(encodePassword(OPERATOR_PASSWORD));
       fimsAdministratorUser.setRole(fimsAdministratorRole.getIdentifier());
 
       ServiceRunner.identityManager.api().createUser(fimsAdministratorUser);
@@ -655,7 +662,7 @@ public class ServiceRunner {
       ServiceRunner.identityManager.api().logout();
 
       enableUser(fimsAdministratorUser);
-      logger.info("Created org admin user {} with plain text password '{}' (encoded password '{}').", fimsAdministratorUser.getIdentifier(), "init1@l", fimsAdministratorUser.getPassword());
+      logger.info("Created org admin user {} with plain text password '{}' (encoded password '{}').", fimsAdministratorUser.getIdentifier(), "op3r4tor", fimsAdministratorUser.getPassword());
 
       return fimsAdministratorUser;
     }
@@ -721,6 +728,23 @@ public class ServiceRunner {
           userWithPassword.getIdentifier(), new Password(userWithPassword.getPassword()));
       Assert.assertTrue(eventRecorder.wait(EventConstants.OPERATION_PUT_USER_PASSWORD,
           userWithPassword.getIdentifier()));
+    }
+  }
+
+  private String changeAdminPassword(String oldPassword, String newPlainTextPassword) throws InterruptedException {
+    String encodedPassword = encodePassword(newPlainTextPassword);
+    logger.info("About to change initial tenant password '{}' to password '{}' (encoded '{}')", oldPassword, newPlainTextPassword, encodedPassword);
+
+    final Authentication passwordOnlyAuthentication;
+    try (final AutoUserContext ignored = new AutoGuest()) {
+      passwordOnlyAuthentication = ServiceRunner.identityManager.api().login(ServiceRunner.ADMIN_USERNAME, oldPassword);
+    }
+
+    try (final AutoUserContext ignored
+             = new AutoUserContext(ServiceRunner.ADMIN_USERNAME, passwordOnlyAuthentication.getAccessToken())) {
+      identityManager.api().changeUserPassword(ServiceRunner.ADMIN_USERNAME, new Password(encodedPassword));
+      Assert.assertTrue(eventRecorder.wait(EventConstants.OPERATION_PUT_USER_PASSWORD, ServiceRunner.ADMIN_USERNAME));
+      return encodedPassword;
     }
   }
 
