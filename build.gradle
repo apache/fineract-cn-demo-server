@@ -186,6 +186,7 @@ rat {
             "target/**",
             "gradlew",
             "gradlew.bat",
-            "README.md"
+            "README.md",
+            "src/main/resources/banner.txt"
     ]
 }
