@@ -25,8 +25,15 @@ Run in persistent mode and to NOT use embedded datastores
 ##### demoserver.provision (true/false)
 Run the provision steps against the services to bootstrap tenants
 
-##### demoserver.lite (true/false)
-Enabling lite mode (defaults to false) restricts the working set of micro-services to Provisioner, Identity, Rhythm, Organization and Customer
+##### demoserver.mode (lite/basic/full) - defaults to 'full'
+* lite mode restricts the working set of micro-services to Provisioner, Identity, Rhythm, Organization and Customer
+* basic mode restricts the working set of micro-services to Provisioner, Identity, Rhythm, Organization, Customer, Accounting and Deposit
+* full mode runs all micro-services (consumes a lot of resources)
+
+##### demoserver.anyPort (true/false) - default to 'false'
+By default micro services are started on fixed ports (range 2020...2033+).
+This way fims-web-app knows where to find the apps.
+Setting this flag true picks any free port for each micro service.
 
 ##### custom.cassandra.contactPoints
 Custom cassandra contact points (multiple values allowed separated by comma e.g. 127.0.0.1:9042,127.0.0.2:9042)
@@ -37,11 +44,12 @@ cassandra user to use
 ##### cassandra.cluster.pwd
 cassandra password to use
 
-##### custom.mariadb.host
-mariadb host to use
+##### custom.postgresql.host
+postgresql host to use
 
-##### custom.mariadb.user
-mariadb user to use
+##### custom.postgresql.user
+postgresql user to use
 
-##### custom.mariadb.password
-mariadb password to use
+##### custom.postgresql.password
+postgresql password to use
+

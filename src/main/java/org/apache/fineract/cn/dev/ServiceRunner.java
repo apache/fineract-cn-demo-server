@@ -27,7 +27,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import org.apache.fineract.cn.accounting.api.v1.client.LedgerManager;
@@ -72,6 +74,7 @@ import org.apache.fineract.cn.rhythm.api.v1.client.RhythmManager;
 import org.apache.fineract.cn.rhythm.api.v1.events.BeatEvent;
 import org.apache.fineract.cn.teller.api.v1.client.TellerManager;
 import org.apache.fineract.cn.test.env.ExtraProperties;
+import org.apache.fineract.cn.test.env.TestEnvironment;
 import org.apache.fineract.cn.test.listener.EnableEventRecording;
 import org.apache.fineract.cn.test.listener.EventRecorder;
 import org.apache.fineract.cn.test.servicestarter.ActiveMQForTest;
@@ -128,6 +131,7 @@ public class ServiceRunner {
 
   private static final String CUSTOM_PROP_PREFIX = "custom.";
   private boolean runInDebug;
+  private boolean anyPort;
 
   @Configuration
   @ActiveMQForTest.EnableActiveMQListen
@@ -176,9 +180,30 @@ public class ServiceRunner {
   /* Enabling lite mode restricts the working set of micro-services to Provisioner, Identity, Rhythm, Organization and Customer
    */
   private boolean liteModeEnabled;
+  /*
+    Enabling basic mode restricts the working set of micro-services to Provisioner, Identity, Rhythm, Organization, Customer,
+   */
+  private boolean basicModeEnabled;
   private List<Tenant> tenantsToCreate;
   private AuthenticationResponse authenticationResponse;
 
+  private static Map<String, Integer> ports = new HashMap<>();
+  static {
+    ports.put("provisioner-v1", 2020);
+    ports.put("identity-v1", 2021);
+    ports.put("rhythm-v1", 2022);
+    ports.put("office-v1", 2023);
+    ports.put("customer-v1", 2024);
+    ports.put("accounting-v1", 2025);
+    ports.put("portfolio-v1", 2026);
+    ports.put("deposit-v1", 2027);
+    ports.put("teller-v1", 2028);
+    ports.put("reporting-v1", 2029);
+    ports.put("cheques-v1", 2030);
+    ports.put("payroll-v1", 2031);
+    ports.put("group-v1", 2032);
+    ports.put("notification-v1", 2033);
+  }
 
   public ServiceRunner() {
     super();
@@ -188,8 +213,11 @@ public class ServiceRunner {
   public void before() throws Exception {
     this.isPersistent = this.environment.containsProperty("demoserver.persistent");
     this.shouldProvision = this.environment.containsProperty("demoserver.provision");
-    this.liteModeEnabled = this.environment.containsProperty("demoserver.lite");
+    String mode = this.environment.getProperty("demoserver.mode");
+    this.liteModeEnabled = "lite".equalsIgnoreCase(mode);
+    this.basicModeEnabled = "basic".equalsIgnoreCase(mode);
     this.runInDebug = this.environment.containsProperty("demoserver.runInDebug");
+    this.anyPort = "true".equalsIgnoreCase(this.environment.getProperty("demoserver.anyPort"));
 
     if (!this.isPersistent) {
       // start embedded Cassandra
@@ -249,35 +277,41 @@ public class ServiceRunner {
       ServiceRunner.depositAccountManager = new Microservice<>(DepositAccountManager.class, "deposit-account-management", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
       startService(generalProperties, depositAccountManager);
 
-      ServiceRunner.tellerManager = new Microservice<>(TellerManager.class, "teller", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-      startService(generalProperties, ServiceRunner.tellerManager);
+      if (!basicModeEnabled) {
+        ServiceRunner.tellerManager = new Microservice<>(TellerManager.class, "teller", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+        startService(generalProperties, ServiceRunner.tellerManager);
 
-      ServiceRunner.reportManager = new Microservice<>(ReportManager.class, "reporting", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-      startService(generalProperties, ServiceRunner.reportManager);
+        ServiceRunner.reportManager = new Microservice<>(ReportManager.class, "reporting", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+        startService(generalProperties, ServiceRunner.reportManager);
 
-      ServiceRunner.chequeManager = new Microservice<>(ChequeManager.class, "cheques", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-      startService(generalProperties, ServiceRunner.chequeManager);
+        ServiceRunner.chequeManager = new Microservice<>(ChequeManager.class, "cheques", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+        startService(generalProperties, ServiceRunner.chequeManager);
 
-      ServiceRunner.payrollManager = new Microservice<>(PayrollManager.class, "payroll", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-      startService(generalProperties, ServiceRunner.payrollManager);
+        ServiceRunner.payrollManager = new Microservice<>(PayrollManager.class, "payroll", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+        startService(generalProperties, ServiceRunner.payrollManager);
 
-      ServiceRunner.groupManager = new Microservice<>(GroupManager.class, "group", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-      startService(generalProperties, ServiceRunner.groupManager);
+        ServiceRunner.groupManager = new Microservice<>(GroupManager.class, "group", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+        startService(generalProperties, ServiceRunner.groupManager);
 
-      ServiceRunner.notificationManager = new Microservice<>(NotificationManager.class, "notification", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
-      startService(generalProperties, ServiceRunner.notificationManager);
+        ServiceRunner.notificationManager =
+             new Microservice<>(NotificationManager.class, "notification", "0.1.0-BUILD-SNAPSHOT", ServiceRunner.INTEGRATION_TEST_ENVIRONMENT);
+        startService(generalProperties, ServiceRunner.notificationManager);
+      }
     }
+    logger.info("ALL SERVICES STARTED!");
   }
 
   @After
   public void tearDown() throws Exception {
     if (!liteModeEnabled) {
-      ServiceRunner.notificationManager.kill();
-      ServiceRunner.groupManager.kill();
-      ServiceRunner.payrollManager.kill();
-      ServiceRunner.chequeManager.kill();
-      ServiceRunner.reportManager.kill();
-      ServiceRunner.tellerManager.kill();
+      if (!basicModeEnabled) {
+        ServiceRunner.notificationManager.kill();
+        ServiceRunner.groupManager.kill();
+        ServiceRunner.payrollManager.kill();
+        ServiceRunner.chequeManager.kill();
+        ServiceRunner.reportManager.kill();
+        ServiceRunner.tellerManager.kill();
+      }
       ServiceRunner.depositAccountManager.kill();
       ServiceRunner.portfolioManager.kill();
       ServiceRunner.ledgerManager.kill();
@@ -313,13 +347,17 @@ public class ServiceRunner {
       System.out.println(ledgerManager.toString());
       System.out.println(portfolioManager.toString());
       System.out.println(depositAccountManager.toString());
-      System.out.println(tellerManager.toString());
-      System.out.println(reportManager.toString());
-      System.out.println(chequeManager.toString());
-      System.out.println(payrollManager.toString());
-      System.out.println(groupManager.toString());
-      System.out.println(notificationManager.toString());
+      if (!basicModeEnabled) {
+        System.out.println(tellerManager.toString());
+        System.out.println(reportManager.toString());
+        System.out.println(chequeManager.toString());
+        System.out.println(payrollManager.toString());
+        System.out.println(groupManager.toString());
+        System.out.println(notificationManager.toString());
+      }
     }
+
+    System.out.println("READY. You can now run fims-web-app. Type 'exit' to quit.");
 
     boolean run = true;
 
@@ -334,10 +372,15 @@ public class ServiceRunner {
   }
 
   private void startService(ExtraProperties properties, Microservice microservice) throws InterruptedException, IOException, ArtifactResolutionException {
+    if (!anyPort) {
+      properties.setProperty(TestEnvironment.SERVER_PORT_PROPERTY, ports.get(microservice.name()).toString());
+    }
+
     if (this.runInDebug) {
       microservice.runInDebug();
     }
     microservice.addProperties(properties);
+    logger.info("about to start {}",  microservice.name());
     microservice.start();
     final boolean registered = microservice.waitTillRegistered(discoveryClient);
     logger.info("Service '{}' started and {} with Eureka.", microservice.name(), registered ? "registered" : "not registered");
@@ -367,6 +410,7 @@ public class ServiceRunner {
   }
 
   private void provisionAppsViaSeshat() throws InterruptedException, IOException {
+    logger.info("STARTING PROVISIONING");
     final List<Application> applicationsToCreate = new ArrayList<>();
     applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.identityManager.name(), ServiceRunner.identityManager.uri()));
     applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.rhythmManager.name(), ServiceRunner.rhythmManager.uri()));
@@ -377,12 +421,14 @@ public class ServiceRunner {
       applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.ledgerManager.name(), ServiceRunner.ledgerManager.uri()));
       applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.portfolioManager.name(), ServiceRunner.portfolioManager.uri()));
       applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.depositAccountManager.name(), ServiceRunner.depositAccountManager.uri()));
-      applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.tellerManager.name(), ServiceRunner.tellerManager.uri()));
-      applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.reportManager.name(), ServiceRunner.reportManager.uri()));
-      applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.chequeManager.name(), ServiceRunner.chequeManager.uri()));
-      applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.payrollManager.name(), ServiceRunner.payrollManager.uri()));
-      applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.groupManager.name(), ServiceRunner.groupManager.uri()));
-      applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.notificationManager.name(), ServiceRunner.notificationManager.uri()));
+      if (!basicModeEnabled) {
+        applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.tellerManager.name(), ServiceRunner.tellerManager.uri()));
+        applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.reportManager.name(), ServiceRunner.reportManager.uri()));
+        applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.chequeManager.name(), ServiceRunner.chequeManager.uri()));
+        applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.payrollManager.name(), ServiceRunner.payrollManager.uri()));
+        applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.groupManager.name(), ServiceRunner.groupManager.uri()));
+        applicationsToCreate.add(ApplicationBuilder.create(ServiceRunner.notificationManager.name(), ServiceRunner.notificationManager.uri()));
+      }
     }
 
     try (final AutoSeshat ignored = new AutoSeshat(authenticationResponse.getToken())) {
@@ -485,20 +531,22 @@ public class ServiceRunner {
 
         provisionApp(tenant, depositAccountManager, org.apache.fineract.cn.deposit.api.v1.EventConstants.INITIALIZE);
 
-        provisionApp(tenant, ServiceRunner.tellerManager, org.apache.fineract.cn.teller.api.v1.EventConstants.INITIALIZE);
+        if (!basicModeEnabled) {
+          provisionApp(tenant, ServiceRunner.tellerManager, org.apache.fineract.cn.teller.api.v1.EventConstants.INITIALIZE);
 
-        provisionApp(tenant, ServiceRunner.reportManager, org.apache.fineract.cn.reporting.api.v1.EventConstants.INITIALIZE);
+          provisionApp(tenant, ServiceRunner.reportManager, org.apache.fineract.cn.reporting.api.v1.EventConstants.INITIALIZE);
 
-        provisionApp(tenant, ServiceRunner.chequeManager, org.apache.fineract.cn.cheque.api.v1.EventConstants.INITIALIZE);
+          provisionApp(tenant, ServiceRunner.chequeManager, org.apache.fineract.cn.cheque.api.v1.EventConstants.INITIALIZE);
 
-        provisionApp(tenant, ServiceRunner.payrollManager, org.apache.fineract.cn.payroll.api.v1.EventConstants.INITIALIZE);
+          provisionApp(tenant, ServiceRunner.payrollManager, org.apache.fineract.cn.payroll.api.v1.EventConstants.INITIALIZE);
 
-        provisionApp(tenant, ServiceRunner.groupManager, org.apache.fineract.cn.group.api.v1.EventConstants.INITIALIZE);
+          provisionApp(tenant, ServiceRunner.groupManager, org.apache.fineract.cn.group.api.v1.EventConstants.INITIALIZE);
 
-        provisionApp(tenant, ServiceRunner.notificationManager, org.apache.fineract.cn.notification.api.v1.events.NotificationEventConstants.INITIALIZE);
-
+          provisionApp(tenant, ServiceRunner.notificationManager, org.apache.fineract.cn.notification.api.v1.events.NotificationEventConstants.INITIALIZE);
+        }
         createChartOfAccounts(orgAdminUserPassword);
       }
+      logger.info("Provisioning completed'.");
 
       return tenantAdminPassword.getAdminPassword();
     }
@@ -607,6 +655,8 @@ public class ServiceRunner {
       ServiceRunner.identityManager.api().logout();
 
       enableUser(fimsAdministratorUser);
+      logger.info("Created org admin user {} with plain text password '{}' (encoded password '{}').", fimsAdministratorUser.getIdentifier(), "init1@l", fimsAdministratorUser.getPassword());
+
       return fimsAdministratorUser;
     }
   }
