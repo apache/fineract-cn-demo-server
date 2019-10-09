@@ -388,7 +388,7 @@ public class ServiceRunner {
     microservice.addProperties(properties);
     logger.info("about to start {}",  microservice.name());
     microservice.start();
-    final boolean registered = (!"provisioner-v1".equals(microservice.name())) && microservice.waitTillRegistered(discoveryClient);
+    final boolean registered = microservice.waitTillRegistered(discoveryClient);
     logger.info("Service '{}' started and {} with Eureka.", microservice.name(), registered ? "registered" : "not registered");
     if (this.runInDebug) {
       logger.info("Service '{}' started with debug port {}.", microservice.name(), microservice.debuggingPort());
