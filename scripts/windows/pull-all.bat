@@ -48,8 +48,8 @@ git push origin develop
 TIMEOUT /T 5
 cd ..
 
-REM pull mariadb
-cd fineract-cn-mariadb
+REM pull postgresql
+cd fineract-cn-postgresql
 git checkout develop
 git pull upstream develop
 CALL gradlew publishToMavenLocal

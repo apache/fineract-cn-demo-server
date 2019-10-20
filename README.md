@@ -37,11 +37,11 @@ cassandra user to use
 ##### cassandra.cluster.pwd
 cassandra password to use
 
-##### custom.mariadb.host
-mariadb host to use
+##### custom.postgresql.host
+postgresql host to use
 
-##### custom.mariadb.user
-mariadb user to use
+##### custom.postgresql.user
+postgresql user to use
 
-##### custom.mariadb.password
-mariadb password to use
+##### custom.postgresql.password
+postgresql password to use
