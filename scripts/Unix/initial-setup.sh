@@ -38,7 +38,7 @@ get_modules() {
   done
 }
 
-get_modules fineract-cn-lang fineract-cn-api fineract-cn-async fineract-cn-cassandra fineract-cn-mariadb fineract-cn-data-jpa fineract-cn-command fineract-cn-test fineract-cn-postgresql
+get_modules fineract-cn-lang fineract-cn-api fineract-cn-async fineract-cn-cassandra fineract-cn-postgresql fineract-cn-data-jpa fineract-cn-command fineract-cn-test
 
 # Return to start folder
 cd ..
