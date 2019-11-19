@@ -50,10 +50,10 @@ CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
 cd ..
 
-REM initialize mariadb
-git clone https://github.com/%githubAccount%/fineract-cn-mariadb.git
-cd fineract-cn-mariadb
-git remote add upstream https://github.com/apache/fineract-cn-mariadb.git
+REM initialize postgresql
+git clone https://github.com/%githubAccount%/fineract-cn-postgresql.git
+cd fineract-cn-postgresql
+git remote add upstream https://github.com/apache/fineract-cn-postgresql.git
 git checkout develop
 CALL gradlew publishToMavenLocal
 TIMEOUT /T 5
