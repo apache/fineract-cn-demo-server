@@ -49,7 +49,7 @@ class TenantBuilder {
     tenant.setDatabaseConnectionInfo(databaseConnectionInfo);
 
     final CassandraConnectionInfo cassandraConnectionInfo = new CassandraConnectionInfo();
-    cassandraConnectionInfo.setClusterName(CassandraConnectorConstants.CLUSTER_NAME_PROP);
+    cassandraConnectionInfo.setClusterName(testEnvironment.getProperty(CassandraConnectorConstants.CLUSTER_NAME_PROP));
     cassandraConnectionInfo.setContactPoints(testEnvironment.getProperty(CassandraConnectorConstants.CONTACT_POINTS_PROP));
     cassandraConnectionInfo.setKeyspace(databaseName);
     cassandraConnectionInfo.setReplicas("3");
